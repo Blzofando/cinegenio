@@ -97,7 +97,7 @@ export const setRelevantReleases = async (releases: RelevantRadarItem[]): Promis
 };
 
 
-// --- COLEÇÃO DOS DESAFIOS ---
+// --- COLEÇÃO DOS DESAFIOS kk---
 const CHALLENGES_COLLECTION_NAME = 'challenges';
 
 export const getChallengesHistory = async (): Promise<Challenge[]> => {
