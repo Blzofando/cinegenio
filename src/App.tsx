@@ -1,3 +1,5 @@
+// src/App.tsx (Completo e Corrigido)
+
 import React, { useState, createContext, useEffect, useCallback } from 'react';
 import { WatchlistProvider } from './contexts/WatchlistContext';
 import { View, AllManagedWatchedData, Rating, ManagedWatchedItem, SuggestionFilters } from './types';
@@ -16,7 +18,7 @@ import RandomView from './components/RandomView';
 import PredictView from './components/PredictView';
 import DuelView from './components/DuelView';
 import RadarView from './components/RadarView';
-import ChallengeView from './components/ChallengeView'; // Importado aqui
+import ChallengeView from './components/ChallengeView';
 import ChatView from './components/ChatView';
 
 const initialData: AllManagedWatchedData = {
@@ -38,15 +40,16 @@ export const WatchedDataContext = createContext<IWatchedDataContext>({
     updateItem: () => {},
 });
 
+// ### COMPONENTE ATUALIZADO ###
 const ViewContainer = ({ children, onBack }: { children: React.ReactNode, onBack: () => void }) => (
-    <div className="min-h-screen bg-gray-900 text-white p-4 sm:p-6 md:p-8 relative">
+    <div className="min-h-screen bg-gray-900 text-white relative">
       <button 
         onClick={onBack}
-        className="absolute top-4 left-4 bg-gray-800 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 z-10"
+        className="fixed top-4 left-4 bg-gray-800 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 z-50 shadow-lg"
       >
         &larr; Voltar ao Menu
       </button>
-      <div className="mt-12 sm:mt-16">
+      <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8">
         {children}
       </div>
     </div>
@@ -154,7 +157,7 @@ const App: React.FC = () => {
         return <ViewContainer onBack={handleBackToMenu}><DuelView /></ViewContainer>;
       case View.RADAR:
         return <ViewContainer onBack={handleBackToMenu}><RadarView /></ViewContainer>;
-      case View.CHALLENGE: // Novo case adicionado
+      case View.CHALLENGE:
         return <ViewContainer onBack={handleBackToMenu}><ChallengeView /></ViewContainer>;
       case View.CHAT:
         return ( <ViewContainer onBack={handleBackToMenu}><ChatView setView={setCurrentView} setSuggestionFilters={setChatFilters} /></ViewContainer> );
