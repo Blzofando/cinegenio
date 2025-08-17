@@ -2,10 +2,10 @@
 
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { AllManagedWatchedData, Challenge, ChallengeStep } from '../types';
-// AQUI ESTÁ A CORREÇÃO: Importando as duas funções necessárias do GeminiService
-import { fetchWeeklyChallenge, formatWatchedDataForPrompt } from './GeminiService';
+import { AllManagedWatchedData, Challenge } from '../types';
+import { fetchWeeklyChallenge, formatWatchedDataForPrompt } from './GeminiService'; 
 import { fetchPosterUrl } from './TMDbService';
+
 /**
  * Retorna o identificador único para a semana atual.
  * Ex: "2025-33" (Ano 2025, 33ª semana)
@@ -47,7 +47,7 @@ ${allWatchedTitles}
 
 **REGRAS DO DESAFIO:**
 1.  **Seja Criativo:** Crie temas como "Maratona de um Diretor", "Clássicos de Halloween" (se for Outubro), "Comédias Românticas para o Dia dos Namorados" (se for Junho), "Animações que Merecem uma Chance", "Joias Raras de um ator que ele ama", etc.
-2.  **Passo Único ou Múltiplo:** O desafio pode ser assistir a um único filme ou uma lista de até 5 (ex: uma trilogia).
+2.  **Passo Único ou Múltiplo:** O desafio pode ser assistir a um único filme ou uma lista de até 7 (ex: uma trilogia).
 3.  **Conecte com o Gosto:** O desafio deve ter alguma conexão com o que o usuário já ama para incentivá-lo a sair da zona de conforto.
 4.  **Seja Convincente:** A razão deve ser curta e despertar a curiosidade.
 

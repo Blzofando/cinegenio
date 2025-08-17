@@ -36,22 +36,26 @@ const ChallengeDetailsModal: React.FC<ChallengeDetailsModalProps> = ({ item, isC
     return (
         <Modal onClose={onClose}>
             <div className="p-6">
-                <h2 className="text-3xl font-bold text-white mb-4">{item.title}</h2>
-                {isLoading ? <div className="h-48 bg-gray-700 rounded animate-pulse"></div> : (
-                    <div>
-                        <p className="text-gray-400 text-sm mb-4">{details?.overview || "Sinopse não disponível."}</p>
-                        {details?.['watch/providers']?.results?.BR?.flatrate && (
-                            <div><h3 className="text-xl font-semibold text-gray-300 mb-3">Onde Assistir</h3><WatchProvidersDisplay providers={details['watch/providers'].results.BR.flatrate} /></div>
+                <div className="flex flex-col sm:flex-row gap-6">
+                    <img src={details?.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : 'https://placehold.co/400x600/374151/9ca3af?text=?'} alt={`Pôster de ${item.title}`} className="w-40 h-60 object-cover rounded-lg shadow-md flex-shrink-0 mx-auto sm:mx-0"/>
+                    <div className="flex-grow">
+                        <h2 className="text-3xl font-bold text-white mb-2">{item.title}</h2>
+                        {isLoading ? <div className="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-4"></div> : (
+                            <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mb-4 text-sm text-gray-400">
+                                <span>{details?.media_type === 'movie' ? 'Filme' : 'Série'}</span>
+                                <span>&bull;</span>
+                                <span>{details?.genres?.[0]?.name || 'N/A'}</span>
+                            </div>
+                        )}
+                        {isLoading ? <div className="h-24 bg-gray-700 rounded animate-pulse"></div> : (
+                            <p className="text-gray-300 text-sm mb-4">{details?.overview || "Sinopse não disponível."}</p>
                         )}
                     </div>
-                )}
+                </div>
+                {isLoading ? <div className="h-20 mt-4 bg-gray-700 rounded animate-pulse"></div> : (details?.['watch/providers']?.results?.BR?.flatrate && <div className="mt-4"><h3 className="text-xl font-semibold text-gray-300 mb-3">Onde Assistir</h3><WatchProvidersDisplay providers={details['watch/providers'].results.BR.flatrate} /></div>)}
                 <div className="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row gap-3">
-                    <button onClick={onComplete} className={`w-full sm:w-auto flex-1 font-bold py-2 px-4 rounded-lg ${isCompleted ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}>
-                        {isCompleted ? 'Desmarcar Conclusão' : 'Marcar como Concluído'}
-                    </button>
-                    <button onClick={onAddToWatchlist} disabled={isInWatchlist} className="w-full sm:w-auto flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
-                        {isInWatchlist ? 'Já na Watchlist' : 'Adicionar à Watchlist'}
-                    </button>
+                    <button onClick={onComplete} className={`w-full sm:w-auto flex-1 font-bold py-2 px-4 rounded-lg ${isCompleted ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}>{isCompleted ? 'Desmarcar Conclusão' : 'Marcar como Concluído'}</button>
+                    <button onClick={onAddToWatchlist} disabled={isInWatchlist} className="w-full sm:w-auto flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed">{isInWatchlist ? 'Já na Watchlist' : 'Adicionar à Watchlist'}</button>
                 </div>
             </div>
         </Modal>
