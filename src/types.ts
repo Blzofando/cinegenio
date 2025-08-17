@@ -1,4 +1,4 @@
-// src/types.ts (Completo com Desafio)
+// src/types.ts (Completo e Corrigido)
 
 export type MediaType = 'Filme' | 'Série' | 'Anime' | 'Programa';
 export type Rating = 'amei' | 'gostei' | 'meh' | 'naoGostei';
@@ -40,47 +40,40 @@ export interface WatchlistItem {
   loveProbability?: number;
 }
 
-// TIPO RE-ADICIONADO
+// ESTRUTURA DO DESAFIO ATUALIZADA
 export interface ChallengeStep {
-    title: string;
+    title: string; // Título já formatado com o ano
     tmdbId: number;
+    tmdbMediaType: 'movie' | 'tv'; // Tipo de mídia guardado
+    posterUrl?: string; // Pôster já guardado
     completed: boolean;
 }
 
-// TIPO RE-ADICIONADO
 export interface Challenge {
     id: string; 
     challengeType: string;
     reason: string;
     status: 'active' | 'completed' | 'lost';
-    tmdbId?: number;
-    tmdbMediaType?: 'movie' | 'tv';
-    title?: string;
-    posterUrl?: string;
-    steps?: ChallengeStep[];
+    // Um desafio agora é sempre uma lista de passos, mesmo que tenha apenas um.
+    steps: ChallengeStep[];
 }
 
-export interface TMDbRadarItem {
+
+export interface RadarItem {
     id: number;
     tmdbMediaType: 'movie' | 'tv';
     title: string;
     posterUrl?: string;
     releaseDate: string;
     type: 'movie' | 'tv';
-    listType: 'now_playing' | 'top_rated_provider' | 'trending'; 
+    listType: 'upcoming' | 'now_playing' | 'top_rated_provider' | 'trending'; 
     providerId?: number;
+    nextEpisodeToAir?: {
+        air_date: string;
+        episode_number: number;
+        season_number: number;
+    };
 }
-
-export interface RelevantRadarItem {
-    id: number;
-    tmdbMediaType: 'movie' | 'tv';
-    title: string;
-    posterUrl?: string;
-    releaseDate: string;
-    type: 'movie' | 'tv';
-    reason: string;
-}
-
 
 export type AllManagedWatchedData = {
   [key in Rating]: ManagedWatchedItem[];
@@ -104,8 +97,18 @@ export interface Recommendation {
 }
 
 export interface DuelResult {
-    title1: { title: string; posterUrl?: string; analysis: string; probability: number; };
-    title2: { title: string; posterUrl?: string; analysis: string; probability: number; };
+    title1: {
+        title: string;
+        posterUrl?: string;
+        analysis: string;
+        probability: number;
+    };
+    title2: {
+        title: string;
+        posterUrl?: string;
+        analysis: string;
+        probability: number;
+    };
     verdict: string;
 }
 
@@ -128,7 +131,6 @@ export type SuggestionFilters = {
     keywords: string;
 };
 
-// VIEW RE-ADICIONADA
 export enum View {
   MENU,
   RANDOM,

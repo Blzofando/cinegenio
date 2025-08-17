@@ -104,29 +104,27 @@ const probabilitySchema = {
     required: ["loveProbability"]
 };
 
-// SCHEMA DO DESAFIO RE-ADICIONADO
+// SCHEMA DO DESAFIO ATUALIZADO PARA SER MAIS PRECISO
 const challengeSchema = {
     type: Type.OBJECT,
     properties: {
-        tmdbId: { type: Type.INTEGER, description: "O ID numérico do TMDb do título, CASO seja um desafio de um só filme." },
-        tmdbMediaType: { type: Type.STRING, enum: ['movie', 'tv'], description: "O tipo de mídia, CASO seja um desafio de um só filme." },
-        title: { type: Type.STRING, description: "O título oficial do filme/série, CASO seja um desafio de um só filme." },
-        challengeType: { type: Type.STRING, description: "Um nome criativo para o tipo de desafio (ex: 'Desafio do Diretor')." },
-        reason: { type: Type.STRING, description: "Uma justificativa curta e convincente." },
+        challengeType: { type: Type.STRING, description: "Um nome criativo para o tipo de desafio." },
+        reason: { type: Type.STRING, description: "Uma justificativa curta, divertida e bem trabalhada." },
         steps: {
             type: Type.ARRAY,
-            description: "Uma lista de títulos, CASO seja um desafio de múltiplos passos.",
+            description: "Uma lista de 2 a 7 títulos para o desafio.",
             items: {
                 type: Type.OBJECT,
                 properties: {
-                    title: { type: Type.STRING },
-                    tmdbId: { type: Type.INTEGER },
+                    title: { type: Type.STRING, description: "O título oficial do filme/série." },
+                    tmdbId: { type: Type.INTEGER, description: "O ID numérico do TMDb do título." },
+                    tmdbMediaType: { type: Type.STRING, enum: ['movie', 'tv'], description: "O tipo de mídia no TMDb." }
                 },
-                required: ["title", "tmdbId"]
+                required: ["title", "tmdbId", "tmdbMediaType"]
             }
         }
     },
-    required: ["challengeType", "reason"]
+    required: ["challengeType", "reason", "steps"]
 };
 
 
@@ -183,24 +181,29 @@ export const fetchLoveProbability = async (prompt: string): Promise<number> => {
     return result.loveProbability;
 };
 
-// FUNÇÃO DO DESAFIO RE-ADICIONADA
-export const fetchWeeklyChallenge = async (prompt: string): Promise<Omit<Challenge, 'id' | 'posterUrl' | 'status'>> => {
+// FUNÇÃO DO DESAFIO ATUALIZADA
+export const fetchWeeklyChallenge = async (prompt: string): Promise<Omit<Challenge, 'id' | 'status'>> => {
     if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        // Mock para desenvolvimento com um desafio de múltiplos passos
         return { 
             challengeType: "Maratona Clássicos do Terror", 
             reason: "Você adora suspense, mas que tal explorar as raízes do terror com estes clássicos?",
             steps: [
-                { title: "O Exorcista (1973)", tmdbId: 9552, completed: false },
-                { title: "O Iluminado (1980)", tmdbId: 694, completed: false },
-                { title: "Psicose (1960)", tmdbId: 539, completed: false },
+                { title: "O Exorcista (1973)", tmdbId: 9552, tmdbMediaType: 'movie', completed: false },
+                { title: "O Iluminado (1980)", tmdbId: 694, tmdbMediaType: 'movie', completed: false },
+                { title: "Psicose (1960)", tmdbId: 539, tmdbMediaType: 'movie', completed: false },
             ]
         };
     }
+
     const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
     const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
         config: { responseMimeType: "application/json", responseSchema: challengeSchema }
     });
-    return JSON.parse(response.text.trim());
+
+    // A resposta da IA já virá no formato correto, mas precisamos garantir os tipos
+    const result = JSON.parse(response.text.trim());
+    return result as Omit<Challenge, 'id' | 'status'>;
 };

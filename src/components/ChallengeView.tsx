@@ -13,7 +13,7 @@ const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ provi
 
 // --- MODAL DE DETALHES PARA DESAFIOS ---
 interface ChallengeDetailsModalProps {
-    item: { title: string, tmdbId: number, tmdbMediaType?: 'movie' | 'tv' };
+    item: { title: string, tmdbId: number, tmdbMediaType?: 'movie' | 'tv', posterUrl?: string };
     isCompleted: boolean;
     onClose: () => void;
     onComplete: () => void;
@@ -37,7 +37,7 @@ const ChallengeDetailsModal: React.FC<ChallengeDetailsModalProps> = ({ item, isC
         <Modal onClose={onClose}>
             <div className="p-6">
                 <div className="flex flex-col sm:flex-row gap-6">
-                    <img src={details?.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : 'https://placehold.co/400x600/374151/9ca3af?text=?'} alt={`Pôster de ${item.title}`} className="w-40 h-60 object-cover rounded-lg shadow-md flex-shrink-0 mx-auto sm:mx-0"/>
+                    <img src={item.posterUrl || 'https://placehold.co/400x600/374151/9ca3af?text=?'} alt={`Pôster de ${item.title}`} className="w-40 h-60 object-cover rounded-lg shadow-md flex-shrink-0 mx-auto sm:mx-0"/>
                     <div className="flex-grow">
                         <h2 className="text-3xl font-bold text-white mb-2">{item.title}</h2>
                         {isLoading ? <div className="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-4"></div> : (
@@ -68,11 +68,14 @@ interface StepCardProps {
     onClick: () => void;
 }
 const StepCard: React.FC<StepCardProps> = ({ step, onClick }) => {
-    const [posterUrl, setPosterUrl] = useState<string | undefined>(undefined);
+    const [posterUrl, setPosterUrl] = useState<string | undefined>(step.posterUrl);
 
     useEffect(() => {
-        fetchPosterUrl(step.title).then(url => setPosterUrl(url ?? undefined));
-    }, [step.title]);
+        // Se o pôster não veio do serviço principal, busca-o aqui
+        if (!step.posterUrl) {
+            fetchPosterUrl(step.title).then(url => setPosterUrl(url ?? undefined));
+        }
+    }, [step.title, step.posterUrl]);
 
     return (
         <div className="relative bg-gray-800 rounded-lg group overflow-hidden shadow-lg cursor-pointer" onClick={onClick}>
@@ -96,7 +99,7 @@ const ChallengeView: React.FC = () => {
     const [challenge, setChallenge] = useState<Challenge | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedItem, setSelectedItem] = useState<{ step: ChallengeStep, index: number, tmdbMediaType: 'movie' | 'tv' } | Challenge | null>(null);
+    const [selectedItem, setSelectedItem] = useState<{ step: ChallengeStep, index: number } | Challenge | null>(null);
 
     useEffect(() => {
         const loadChallenge = async () => {
@@ -142,7 +145,7 @@ const ChallengeView: React.FC = () => {
     const handleAddToWatchlist = (item: { tmdbId: number, tmdbMediaType?: 'movie' | 'tv', title: string, posterUrl?: string }) => {
         const watchlistItem: WatchlistItem = {
             id: item.tmdbId,
-            tmdbMediaType: item.tmdbMediaType || 'movie', // Assume filme se não especificado
+            tmdbMediaType: item.tmdbMediaType || 'movie',
             title: item.title,
             posterUrl: item.posterUrl,
             addedAt: Date.now(),
@@ -168,7 +171,7 @@ const ChallengeView: React.FC = () => {
                     onClose={() => setSelectedItem(null)}
                     onComplete={() => 'steps' in selectedItem ? handleToggleStep(selectedItem.index) : handleToggleSingleChallenge()}
                     onAddToWatchlist={() => handleAddToWatchlist( 'steps' in selectedItem ? selectedItem.steps![selectedItem.index] : selectedItem )}
-                    isInWatchlist={isInWatchlist( 'steps' in selectedItem ? selectedItem.steps![selectedItem.index].tmdbId : selectedItem.tmdbId || 0 )}
+                    isInWatchlist={isInWatchlist( ('steps' in selectedItem ? selectedItem.steps![selectedItem.index].tmdbId : selectedItem.tmdbId) || 0 )}
                 />
             )}
 
@@ -180,10 +183,10 @@ const ChallengeView: React.FC = () => {
                     
                     {challenge.steps && challenge.steps.length > 0 ? (
                         <div>
-                            <p className="text-gray-300 mt-2 mb-6">{challenge.reason}</p>
+                            <p className="text-gray-300 mt-2 mb-6 max-w-2xl mx-auto">{challenge.reason}</p>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                                 {challenge.steps.map((step, index) => (
-                                    <StepCard key={step.tmdbId} step={step} onClick={() => setSelectedItem({ ...challenge, index, tmdbMediaType: 'movie' })} /> // Assume 'movie' para passos de desafio
+                                    <StepCard key={step.tmdbId} step={step} onClick={() => setSelectedItem({ ...challenge, step, index })} />
                                 ))}
                             </div>
                         </div>
@@ -191,7 +194,7 @@ const ChallengeView: React.FC = () => {
                         <div className="flex flex-col items-center cursor-pointer" onClick={() => setSelectedItem(challenge)}>
                             <img src={challenge.posterUrl || 'https://placehold.co/400x600/374151/9ca3af?text=?'} alt={`Pôster de ${challenge.title}`} className="w-48 h-72 object-cover rounded-lg shadow-lg mx-auto mb-4"/>
                             <h2 className="text-3xl font-bold text-white">{challenge.title}</h2>
-                            <p className="text-gray-300 mt-2 mb-6">{challenge.reason}</p>
+                            <p className="text-gray-300 mt-2 mb-6 max-w-2xl mx-auto">{challenge.reason}</p>
                         </div>
                     )}
 
