@@ -7,11 +7,11 @@ interface MainMenuProps {
   setView: (view: View) => void;
 }
 
-// Botão principal, com um design mais limpo
+// Botão principal, com um design mais limpo e responsivo
 const MenuButton = ({ icon, text, onClick }: { icon: string, text: string, onClick: () => void }) => (
     <button
       onClick={onClick}
-      className="bg-gray-800 hover:bg-indigo-600 text-white font-bold py-3 sm:py-4 px-6 rounded-lg w-full flex items-center justify-start space-x-4 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-indigo-500/50 text-sm sm:text-base"
+      className="bg-gray-800 hover:bg-indigo-600 text-white font-bold py-3 sm:py-4 px-6 rounded-lg w-full flex items-center justify-start space-x-4 transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-indigo-500/50 text-base sm:text-lg"
     >
       <span className="text-xl sm:text-2xl">{icon}</span>
       <span>{text}</span>

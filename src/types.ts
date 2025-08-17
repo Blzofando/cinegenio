@@ -1,4 +1,4 @@
-// src/types.ts (Completo e Reestruturado)
+// src/types.ts (Completo com Desafio)
 
 export type MediaType = 'Filme' | 'Série' | 'Anime' | 'Programa';
 export type Rating = 'amei' | 'gostei' | 'meh' | 'naoGostei';
@@ -40,12 +40,14 @@ export interface WatchlistItem {
   loveProbability?: number;
 }
 
+// TIPO RE-ADICIONADO
 export interface ChallengeStep {
     title: string;
     tmdbId: number;
     completed: boolean;
 }
 
+// TIPO RE-ADICIONADO
 export interface Challenge {
     id: string; 
     challengeType: string;
@@ -58,7 +60,6 @@ export interface Challenge {
     steps?: ChallengeStep[];
 }
 
-// Tipo para os itens rápidos (Nos Cinemas, Top 10s, Tendências)
 export interface TMDbRadarItem {
     id: number;
     tmdbMediaType: 'movie' | 'tv';
@@ -70,7 +71,6 @@ export interface TMDbRadarItem {
     providerId?: number;
 }
 
-// Tipo para os itens relevantes (curados pela IA)
 export interface RelevantRadarItem {
     id: number;
     tmdbMediaType: 'movie' | 'tv';
@@ -128,6 +128,7 @@ export type SuggestionFilters = {
     keywords: string;
 };
 
+// VIEW RE-ADICIONADA
 export enum View {
   MENU,
   RANDOM,

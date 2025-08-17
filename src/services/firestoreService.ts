@@ -2,7 +2,8 @@
 
 import { db } from './firebaseConfig';
 import { collection, doc, getDocs, setDoc, deleteDoc, updateDoc, writeBatch } from "firebase/firestore";
-import { ManagedWatchedItem, Rating, WatchlistItem, TMDbRadarItem, RelevantRadarItem, Challenge } from '../types';
+import { ManagedWatchedItem, Rating, WatchlistItem, Challenge, RelevantRadarItem, TMDbRadarItem } from '../types';
+
 
 // --- COLEÇÃO PRINCIPAL (ASSISTIDOS) ---
 const WATCHED_COLLECTION_NAME = 'watchedItems';
@@ -97,7 +98,7 @@ export const setRelevantReleases = async (releases: RelevantRadarItem[]): Promis
 };
 
 
-// --- COLEÇÃO DOS DESAFIOS kk---
+// --- COLEÇÃO DOS DESAFIOS ---
 const CHALLENGES_COLLECTION_NAME = 'challenges';
 
 export const getChallengesHistory = async (): Promise<Challenge[]> => {
