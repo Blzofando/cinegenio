@@ -50,12 +50,16 @@ function openProviderLink(providerKey: string) {
   
   // Tenta redirecionar para o deep link.
   window.location.href = provider.scheme;
+  
+  const start = Date.now();
 
   // Define um fallback para o site se o app não responder.
   setTimeout(() => {
-    // Se o utilizador ainda estiver na página, significa que o app não abriu.
-    // Esta é uma forma simples e eficaz de detetar a falha.
-    window.location.href = provider.fallback;
+    const end = Date.now();
+    // Se passaram menos de 2.2 segundos, é muito provável que o app não abriu.
+    if (document.hasFocus() && (end - start < 2200)) {
+        window.location.href = provider.fallback;
+    }
   }, 2000); 
 }
 
@@ -64,7 +68,10 @@ export function openProviderLinkFromTmdbName(tmdbName: string) {
   const providerKey = tmdbProviderMap[tmdbName];
   if (!providerKey) {
     console.warn(`Provedor "${tmdbName}" não mapeado.`);
-    // Se não encontrarmos o provedor no nosso mapa, não fazemos nada.
+    // Se não encontrarmos o provedor, podemos ter um fallback para um link de busca, por exemplo.
+    // Por agora, não fazemos nada para não quebrar a experiência.
+    const fallbackUrl = "https://www.google.com/search?q=" + encodeURIComponent(tmdbName);
+    window.open(fallbackUrl, '_blank');
     return;
   }
   openProviderLink(providerKey);
