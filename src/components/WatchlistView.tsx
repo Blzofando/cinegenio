@@ -1,3 +1,5 @@
+// src/components/WatchlistView.tsx
+
 import React, { useContext, useState, useMemo, useEffect, useCallback } from 'react';
 import { WatchlistContext } from '../contexts/WatchlistContext';
 import { WatchedDataContext } from '../App';
@@ -5,40 +7,31 @@ import { WatchlistItem, Rating, ManagedWatchedItem, WatchProvider, TMDbSearchRes
 import { getTMDbDetails, getProviders, searchTMDb } from '../services/TMDbService';
 import { updateWatchlistItem } from '../services/firestoreService';
 import { getLoveProbability } from '../services/RecommendationService';
+import { providerLinks } from '../config/providerLinks'; // Importa nosso novo dicionário de links
 
 // --- Tipos Específicos da View ---
 type SortType = 'addedAt-desc' | 'addedAt-asc' | 'title-asc' | 'title-desc';
 
 // --- Componentes ---
 
-interface ModalProps {
-    children: React.ReactNode;
-    onClose: () => void;
-}
-const Modal: React.FC<ModalProps> = ({ children, onClose }) => (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}>
-        <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>
-            {children}
-        </div>
-    </div>
-);
+const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () => void }) => ( <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}><div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>{children}</div></div>);
 
-interface WatchProvidersDisplayProps {
-    providers: WatchProvider[];
-}
-const WatchProvidersDisplay: React.FC<WatchProvidersDisplayProps> = ({ providers }) => (
-    <div className="flex flex-wrap gap-3">
-        {providers.map(p => (
-            <img 
-                key={p.provider_id} 
-                src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
-                alt={p.provider_name}
-                title={p.provider_name}
-                className="w-12 h-12 rounded-lg object-cover bg-gray-700"
-            />
-        ))}
-    </div>
-);
+// ### COMPONENTE ATUALIZADO COM ÍCONES CLICÁVEIS ###
+const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ providers }) => {
+    return (
+        <div className="flex flex-wrap gap-3">
+            {providers.map(p => (
+                <a href={providerLinks[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
+                    <img 
+                        src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
+                        alt={p.provider_name}
+                        className="w-12 h-12 rounded-lg object-cover bg-gray-700 transition-transform hover:scale-110"
+                    />
+                </a>
+            ))}
+        </div>
+    );
+};
 
 interface RateModalProps {
     item: WatchlistItem;
@@ -164,14 +157,13 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
                 <div className="flex justify-end gap-3 border-t border-gray-700 pt-4 mt-4">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
                     <button type="submit" disabled={isAdding || !selectedSuggestion} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
-                        {isAdding ? 'Adicionando...' : 'Adicionar'}
+                        {isAdding ? 'A adicionar...' : 'Adicionar'}
                     </button>
                 </div>
             </form>
         </Modal>
     );
 };
-
 interface DetailsModalProps {
     item: WatchlistItem;
     onClose: () => void;
@@ -186,7 +178,6 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose, onMarkAsWatc
     const handleCalculateProbability = async () => {
         setIsCalculating(true);
         try {
-            // ### AQUI ESTÁ A CORREÇÃO ###
             const prob = await getLoveProbability(item.title, watchedData);
             await updateWatchlistItem(item.id, { loveProbability: prob });
             setDetails(prev => ({ ...prev, loveProbability: prob }));

@@ -5,29 +5,34 @@ import { WatchedDataContext } from '../App';
 import { WatchlistContext } from '../contexts/WatchlistContext';
 import { Challenge, ChallengeStep, WatchlistItem, WatchProvider } from '../types';
 import { getWeeklyChallenge, updateChallenge } from '../services/ChallengeService';
-import { fetchPosterUrl, getTMDbDetails } from '../services/TMDbService';
+import { getTMDbDetails } from '../services/TMDbService';
+import { providerLinks } from '../config/providerLinks'; // Importa o nosso dicionário de links
+
+// --- Componentes Internos ---
 
 const LoadingSpinner = () => ( <div className="flex flex-col items-center justify-center space-y-2 mt-8"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div><span className="text-lg text-gray-400">O Gênio está a preparar o seu desafio...</span></div>);
 const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () => void }) => ( <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}><div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>{children}</div></div>);
 
 // Componente ATUALIZADO para tornar os ícones clicáveis
-const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[], link: string }> = ({ providers, link }) => (
-    <div className="flex flex-wrap gap-3">
-        {providers.map(p => (
-            <a href={link} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
-                <img 
-                    src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
-                    alt={p.provider_name}
-                    className="w-12 h-12 rounded-lg object-cover bg-gray-700 transition-transform hover:scale-110"
-                />
-            </a>
-        ))}
-    </div>
-);
+const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ providers }) => {
+    return (
+        <div className="flex flex-wrap gap-3">
+            {providers.map(p => (
+                <a href={providerLinks[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
+                    <img 
+                        src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
+                        alt={p.provider_name}
+                        className="w-12 h-12 rounded-lg object-cover bg-gray-700 transition-transform hover:scale-110"
+                    />
+                </a>
+            ))}
+        </div>
+    );
+};
 
-// --- MODAL DE DETALHES PARA DESAFIOS (CORRIGIDO) ---
+// --- MODAL DE DETALHES PARA DESAFIOS ---
 interface ChallengeDetailsModalProps {
-    item: ChallengeStep; // Agora sempre recebe um ChallengeStep
+    item: ChallengeStep;
     isCompleted: boolean;
     onClose: () => void;
     onComplete: () => void;
@@ -57,7 +62,6 @@ const ChallengeDetailsModal: React.FC<ChallengeDetailsModalProps> = ({ item, isC
                         <h2 className="text-3xl font-bold text-white mb-2">{item.title}</h2>
                         {isLoading ? <div className="h-5 bg-gray-700 rounded animate-pulse w-3/4 mb-4"></div> : (
                             <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mb-4 text-sm text-gray-400">
-                                {/* CORREÇÃO: Usa o tmdbMediaType do item, que é 100% preciso */}
                                 <span>{item.tmdbMediaType === 'movie' ? 'Filme' : 'Série'}</span>
                                 <span>&bull;</span>
                                 <span>{details?.genres?.[0]?.name || 'N/A'}</span>
@@ -66,11 +70,10 @@ const ChallengeDetailsModal: React.FC<ChallengeDetailsModalProps> = ({ item, isC
                         {isLoading ? <div className="space-y-2 mt-4"><div className="h-4 bg-gray-700 rounded animate-pulse w-full"></div><div className="h-4 bg-gray-700 rounded animate-pulse w-5/6"></div></div> : <p className="text-gray-300 text-sm mb-4">{details?.overview || "Sinopse não disponível."}</p>}
                     </div>
                 </div>
-                {isLoading ? <div className="h-20 mt-4 bg-gray-700 rounded animate-pulse"></div> : (watchProviders?.flatrate && <div className="mt-4"><h3 className="text-xl font-semibold text-gray-300 mb-3">Onde Assistir</h3><WatchProvidersDisplay providers={watchProviders.flatrate} link={watchProviders.link} /></div>)}
+                {isLoading ? <div className="h-20 mt-4 bg-gray-700 rounded animate-pulse"></div> : (watchProviders?.flatrate && <div className="mt-4"><h3 className="text-xl font-semibold text-gray-300 mb-3">Onde Assistir</h3><WatchProvidersDisplay providers={watchProviders.flatrate} /></div>)}
                 <div className="mt-6 pt-6 border-t border-gray-700 flex flex-col sm:flex-row gap-3">
                     <button onClick={onComplete} className={`w-full sm:w-auto flex-1 font-bold py-2 px-4 rounded-lg ${isCompleted ? 'bg-yellow-600 hover:bg-yellow-700' : 'bg-green-600 hover:bg-green-700'}`}>{isCompleted ? 'Desmarcar Conclusão' : 'Marcar como Concluído'}</button>
                     <button onClick={onAddToWatchlist} disabled={isInWatchlist} className="w-full sm:w-auto flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed">{isInWatchlist ? 'Já na Watchlist' : 'Adicionar à Watchlist'}</button>
-                    {/* BOTÃO FECHAR ADICIONADO */}
                     <button onClick={onClose} className="w-full sm:w-auto bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Fechar</button>
                 </div>
             </div>
