@@ -6,25 +6,30 @@ import { WatchlistContext } from '../contexts/WatchlistContext';
 import { Challenge, ChallengeStep, WatchlistItem, WatchProvider } from '../types';
 import { getWeeklyChallenge, updateChallenge } from '../services/ChallengeService';
 import { getTMDbDetails } from '../services/TMDbService';
-import { providerDeepLinks } from '../config/providerLinks'; // Importa o nosso dicionário de links
+import { openProviderLinkFromTmdbName } from '../config/providerLinks'; // ALTERAÇÃO: Importa a função correta
 
 // --- Componentes Internos ---
 
 const LoadingSpinner = () => ( <div className="flex flex-col items-center justify-center space-y-2 mt-8"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div><span className="text-lg text-gray-400">O Gênio está a preparar o seu desafio...</span></div>);
 const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () => void }) => ( <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}><div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>{children}</div></div>);
 
-// Componente ATUALIZADO para tornar os ícones clicáveis
+// ALTERAÇÃO: Componente ATUALIZADO para tornar os ícones clicáveis
 const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ providers }) => {
     return (
         <div className="flex flex-wrap gap-3">
             {providers.map(p => (
-                <a href={providers[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
+                <button
+                    key={p.provider_id}
+                    onClick={() => openProviderLinkFromTmdbName(p.provider_name)}
+                    title={`Assistir em ${p.provider_name}`}
+                    className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 rounded-lg"
+                >
                     <img 
                         src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
                         alt={p.provider_name}
                         className="w-12 h-12 rounded-lg object-cover bg-gray-700 transition-transform hover:scale-110"
                     />
-                </a>
+                </button>
             ))}
         </div>
     );
