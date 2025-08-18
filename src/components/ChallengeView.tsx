@@ -6,7 +6,7 @@ import { WatchlistContext } from '../contexts/WatchlistContext';
 import { Challenge, ChallengeStep, WatchlistItem, WatchProvider } from '../types';
 import { getWeeklyChallenge, updateChallenge } from '../services/ChallengeService';
 import { getTMDbDetails } from '../services/TMDbService';
-import { providerLinks } from '../config/providerLinks'; // Importa o nosso dicionário de links
+import { providerDeepLinks } from '../config/providerLinks'; // Importa o nosso dicionário de links
 
 // --- Componentes Internos ---
 
@@ -18,7 +18,7 @@ const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ provi
     return (
         <div className="flex flex-wrap gap-3">
             {providers.map(p => (
-                <a href={providerLinks[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
+                <a href={providers[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
                     <img 
                         src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
                         alt={p.provider_name}

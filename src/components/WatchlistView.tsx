@@ -7,7 +7,7 @@ import { WatchlistItem, Rating, ManagedWatchedItem, WatchProvider, TMDbSearchRes
 import { getTMDbDetails, getProviders, searchTMDb } from '../services/TMDbService';
 import { updateWatchlistItem } from '../services/firestoreService';
 import { getLoveProbability } from '../services/RecommendationService';
-import { providerLinks } from '../config/providerLinks'; // Importa nosso novo dicionário de links
+import { providerDeepLinks } from '../config/providerLinks'; // Importa nosso novo dicionário de links
 
 // --- Tipos Específicos da View ---
 type SortType = 'addedAt-desc' | 'addedAt-asc' | 'title-asc' | 'title-desc';
@@ -21,7 +21,7 @@ const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ provi
     return (
         <div className="flex flex-wrap gap-3">
             {providers.map(p => (
-                <a href={providerLinks[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
+                <a href={providers[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
                     <img 
                         src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
                         alt={p.provider_name}
