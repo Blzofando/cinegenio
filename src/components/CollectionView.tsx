@@ -3,6 +3,7 @@ import { ManagedWatchedItem, Rating, TMDbSearchResult, WatchProvider, MediaType 
 import { WatchedDataContext } from '../App';
 import { getTMDbDetails, getProviders, searchTMDb } from '../services/TMDbService';
 import { updateWatchedItem } from '../services/firestoreService';
+import { openProviderLinkFromTmdbName } from '../config/providerLinks';
 
 // --- Estilos e Configurações ---
 const ratingStyles: Record<Rating, { bg: string, text: string, border: string }> = {
@@ -43,13 +44,18 @@ interface WatchProvidersDisplayProps {
 const WatchProvidersDisplay: React.FC<WatchProvidersDisplayProps> = ({ providers }) => (
     <div className="flex flex-wrap gap-3">
         {providers.map(p => (
-            <img 
-                key={p.provider_id} 
-                src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
-                alt={p.provider_name}
-                title={p.provider_name}
-                className="w-12 h-12 rounded-lg object-cover bg-gray-700"
-            />
+            <button
+                key={p.provider_id}
+                onClick={() => openProviderLinkFromTmdbName(p.provider_name)}
+                title={`Assistir em ${p.provider_name}`}
+                className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-indigo-500 rounded-lg transition-transform hover:scale-110"
+            >
+                <img 
+                    src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
+                    alt={p.provider_name}
+                    className="w-12 h-12 rounded-lg object-cover bg-gray-700"
+                />
+            </button>
         ))}
     </div>
 );
