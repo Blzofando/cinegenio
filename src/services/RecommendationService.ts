@@ -1,4 +1,4 @@
-import { AllManagedWatchedData, ManagedWatchedItem, Recommendation, MediaType, DuelResult, TMDbSearchResult, RadarRelease, SuggestionFilters } from '../types';
+import { AllManagedWatchedData, ManagedWatchedItem, Recommendation, MediaType, DuelResult, TMDbSearchResult, RadarItem, SuggestionFilters } from '../types';
 import { searchTMDb, getTMDbDetails, getProviders, getUpcomingMovies, getOnTheAirTV, fetchPosterUrl } from './TMDbService';
 import { formatWatchedDataForPrompt, fetchRecommendation, fetchDuelAnalysis, fetchPersonalizedRadar, fetchBestTMDbMatch, fetchLoveProbability } from './GeminiService';
 
@@ -76,7 +76,7 @@ ${formattedData}`;
     return result;
 };
 
-export const getPersonalizedRadar = async (watchedData: AllManagedWatchedData): Promise<RadarRelease[]> => {
+export const getPersonalizedRadar = async (watchedData: AllManagedWatchedData): Promise<RadarItem[]> => {
     // ... (código existente inalterado)
     const [movies, tvShows] = await Promise.all([getUpcomingMovies(), getOnTheAirTV()]);
     const allReleases = [...movies, ...tvShows];

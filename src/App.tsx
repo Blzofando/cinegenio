@@ -92,10 +92,12 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
         try {
             const mediaDetails = await getFullMediaDetailsFromQuery(title);
             const newItem: ManagedWatchedItem = {
-                ...mediaDetails,
-                rating,
-                createdAt: Date.now(),
+              ...mediaDetails,
+              watchProviders: mediaDetails.watchProviders || { link: '', flatrate: [] },
+              rating,
+              createdAt: Date.now(),
             };
+
             await addWatchedItem(newItem);
         } catch(e) {
             console.error(e);

@@ -73,7 +73,10 @@ export interface RadarItem {
         episode_number: number;
         season_number: number;
     };
+    reason?: string; // <--- ADICIONE ESTA LINHA
 }
+export type TMDbRadarItem = RadarItem;
+export type RelevantRadarItem = RadarItem;
 
 export type AllManagedWatchedData = {
   [key in Rating]: ManagedWatchedItem[];
