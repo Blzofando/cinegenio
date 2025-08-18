@@ -1,11 +1,8 @@
-// src/components/CollectionView.tsx
-
 import React, { useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { ManagedWatchedItem, Rating, TMDbSearchResult, WatchProvider, MediaType } from '../types';
 import { WatchedDataContext } from '../App';
 import { getTMDbDetails, getProviders, searchTMDb } from '../services/TMDbService';
 import { updateWatchedItem } from '../services/firestoreService';
-import { openProviderLinkFromTmdbName } from '../config/providerLinks'; // Importa a nova função de deep link
 
 // --- Estilos e Configurações ---
 const ratingStyles: Record<Rating, { bg: string, text: string, border: string }> = {
@@ -26,29 +23,36 @@ type SortType = 'createdAt-desc' | 'createdAt-asc' | 'title-asc' | 'title-desc';
 
 // --- Componentes ---
 
-const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () => void }) => ( <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}><div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>{children}</div></div>);
-
-// ### COMPONENTE ATUALIZADO PARA USAR DEEP LINK ###
-const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ providers }) => {
-    return (
-        <div className="flex flex-wrap gap-3">
-            {providers.map(p => (
-                <button 
-                    key={p.provider_id} 
-                    onClick={() => openProviderLinkFromTmdbName(p.provider_name)}
-                    title={`Tentar abrir em ${p.provider_name}`}
-                >
-                    <img 
-                        src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
-                        alt={p.provider_name}
-                        className="w-12 h-12 rounded-lg object-cover bg-gray-700 transition-transform hover:scale-110"
-                    />
-                </button>
-            ))}
+interface ModalProps {
+    children: React.ReactNode;
+    onClose: () => void;
+}
+const Modal: React.FC<ModalProps> = ({ children, onClose }) => (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}>
+        <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>
+            {children}
         </div>
-    );
-};
+    </div>
+);
 
+// --- Componentes do Modal de Detalhes ---
+
+interface WatchProvidersDisplayProps {
+    providers: WatchProvider[];
+}
+const WatchProvidersDisplay: React.FC<WatchProvidersDisplayProps> = ({ providers }) => (
+    <div className="flex flex-wrap gap-3">
+        {providers.map(p => (
+            <img 
+                key={p.provider_id} 
+                src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
+                alt={p.provider_name}
+                title={p.provider_name}
+                className="w-12 h-12 rounded-lg object-cover bg-gray-700"
+            />
+        ))}
+    </div>
+);
 
 interface DetailsModalProps {
     item: ManagedWatchedItem;
@@ -56,6 +60,7 @@ interface DetailsModalProps {
 }
 const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose }) => {
     const { removeItem } = useContext(WatchedDataContext);
+    // ... (O restante do código do DetailsModal permanece o mesmo)
     const [currentItem, setCurrentItem] = useState(item);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -79,10 +84,10 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose }) => {
     }, [currentItem.id, currentItem.tmdbMediaType, currentItem.synopsis, currentItem.watchProviders]);
 
     const handleRemove = () => {
-        // Usando um modal customizado em vez de window.confirm
-        // A implementação do modal de confirmação fica a seu critério
-        removeItem(currentItem.id);
-        onClose();
+        if (window.confirm(`Tem certeza que deseja remover "${currentItem.title}" da sua coleção?`)) {
+            removeItem(currentItem.id);
+            onClose();
+        }
     };
 
     const ratingStyle = ratingStyles[currentItem.rating];
@@ -104,7 +109,7 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose }) => {
                             )}
                         </div>
                         <h3 className="text-lg font-semibold text-gray-300 mt-4 mb-1">Sinopse</h3>
-                        <p className="text-gray-400 text-sm">{isLoading ? 'A carregar...' : currentItem.synopsis}</p>
+                        <p className="text-gray-400 text-sm">{isLoading ? 'Carregando...' : currentItem.synopsis}</p>
                     </div>
                 </div>
                 {currentItem.watchProviders?.flatrate && currentItem.watchProviders.flatrate.length > 0 && (
@@ -118,10 +123,15 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose }) => {
         </Modal>
     );
 };
+
+
+// --- Componente do Modal de Adicionar ---
+
 interface AddModalProps {
     onClose: () => void;
 }
 const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
+    // ... (O código do AddModal permanece o mesmo)
     const [query, setQuery] = useState('');
     const [rating, setRating] = useState<Rating>('gostei');
     const [suggestions, setSuggestions] = useState<TMDbSearchResult[]>([]);
@@ -132,11 +142,17 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
     
     const debounceSearch = useCallback((searchFn: (q: string) => void, delay: number) => {
         let timeoutId: NodeJS.Timeout;
-        return (q: string) => { clearTimeout(timeoutId); timeoutId = setTimeout(() => searchFn(q), delay); };
+        return (q: string) => {
+            clearTimeout(timeoutId);
+            timeoutId = setTimeout(() => searchFn(q), delay);
+        };
     }, []);
 
     const fetchSuggestions = async (q: string) => {
-        if (q.length < 3) { setSuggestions([]); return; }
+        if (q.length < 3) {
+            setSuggestions([]);
+            return;
+        }
         setIsLoadingSuggestions(true);
         try {
             const results = await searchTMDb(q);
@@ -163,18 +179,24 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!query.trim()) { setError('O título não pode estar vazio.'); return; }
+        if (!query.trim()) {
+            setError('O título não pode estar vazio.');
+            return;
+        }
         setError('');
         try {
             await addItem(query, rating);
             onClose();
-        } catch (err) { setError(err instanceof Error ? err.message : 'Falha ao adicionar título.'); }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Falha ao adicionar título.');
+        }
     };
 
     return (
         <Modal onClose={onClose}>
             <form onSubmit={handleSubmit} className="p-6">
                 <h2 className="text-2xl font-bold text-white mb-4">Adicionar Novo Título</h2>
+                
                 {!selectedSuggestion && (
                     <div className="relative">
                         <input type="text" value={query} onChange={handleInputChange} className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Comece a digitar um título..."/>
@@ -194,6 +216,7 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
                         )}
                     </div>
                 )}
+
                 {selectedSuggestion && (
                     <div className="bg-gray-700/50 p-4 rounded-lg">
                         <div className="flex items-start gap-4">
@@ -206,6 +229,7 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
                         </div>
                     </div>
                 )}
+
                 <div className="my-6">
                     <label className="block text-sm font-medium text-gray-300 mb-3 text-center">Minha Avaliação</label>
                     <div className="flex justify-center gap-2 sm:gap-4">
@@ -221,7 +245,7 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
                 <div className="flex justify-end gap-3 border-t border-gray-700 pt-4">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
                     <button type="submit" disabled={isAdding || !query} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
-                        {isAdding ? 'A adicionar...' : 'Adicionar'}
+                        {isAdding ? 'Adicionando...' : 'Adicionar'}
                     </button>
                 </div>
             </form>
@@ -229,17 +253,35 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
     );
 };
 
-interface GenreSelectorProps { availableGenres: string[]; selectedGenres: Set<string>; onToggle: (genre: string) => void; }
+
+// --- NOVO Componente do Modal de Filtros ---
+
+interface GenreSelectorProps {
+    availableGenres: string[];
+    selectedGenres: Set<string>;
+    onToggle: (genre: string) => void;
+}
 const GenreSelector: React.FC<GenreSelectorProps> = ({ availableGenres, selectedGenres, onToggle }) => {
     const [query, setQuery] = useState('');
     const filteredGenres = query ? availableGenres.filter(g => g.toLowerCase().includes(query.toLowerCase())) : availableGenres;
+
     return (
         <div>
             <h3 className="font-semibold text-gray-300 mb-3">Gênero</h3>
-            <input type="text" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar gênero..." className="w-full bg-gray-900 text-white p-2 mb-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"/>
+            <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar gênero..."
+                className="w-full bg-gray-900 text-white p-2 mb-2 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
             <div className="max-h-40 overflow-y-auto space-y-1 p-1">
                 {filteredGenres.map(genre => (
-                    <button key={genre} onClick={() => onToggle(genre)} className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${selectedGenres.has(genre) ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}>
+                    <button
+                        key={genre}
+                        onClick={() => onToggle(genre)}
+                        className={`w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors ${selectedGenres.has(genre) ? 'bg-indigo-600 text-white' : 'bg-gray-700 hover:bg-gray-600'}`}
+                    >
                         {genre}
                     </button>
                 ))}
@@ -248,12 +290,51 @@ const GenreSelector: React.FC<GenreSelectorProps> = ({ availableGenres, selected
     );
 };
 
-interface FilterModalProps { isOpen: boolean; onClose: () => void; availableCategories: string[]; availableGenres: string[]; tempSortType: SortType; setTempSortType: (sort: SortType) => void; tempSelectedCategories: Set<string>; setTempSelectedCategories: (cats: Set<string>) => void; tempSelectedGenres: Set<string>; setTempSelectedGenres: (genres: Set<string>) => void; onApply: () => void; }
-const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, availableCategories, availableGenres, tempSortType, setTempSortType, tempSelectedCategories, setTempSelectedCategories, tempSelectedGenres, setTempSelectedGenres, onApply }) => {
+interface FilterModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    availableCategories: string[];
+    availableGenres: string[];
+    
+    tempSortType: SortType;
+    setTempSortType: (sort: SortType) => void;
+    tempSelectedCategories: Set<string>;
+    setTempSelectedCategories: (cats: Set<string>) => void;
+    tempSelectedGenres: Set<string>;
+    setTempSelectedGenres: (genres: Set<string>) => void;
+
+    onApply: () => void;
+}
+const FilterModal: React.FC<FilterModalProps> = ({ 
+    isOpen, onClose, availableCategories, availableGenres,
+    tempSortType, setTempSortType,
+    tempSelectedCategories, setTempSelectedCategories,
+    tempSelectedGenres, setTempSelectedGenres,
+    onApply 
+}) => {
     if (!isOpen) return null;
-    const handleCategoryToggle = (cat: string) => { const newSet = new Set(tempSelectedCategories); if (newSet.has(cat)) newSet.delete(cat); else newSet.add(cat); setTempSelectedCategories(newSet); };
-    const handleGenreToggle = (genre: string) => { const newSet = new Set(tempSelectedGenres); if (newSet.has(genre)) newSet.delete(genre); else newSet.add(genre); setTempSelectedGenres(newSet); };
-    const sortOptions: {id: SortType, label: string}[] = [ {id: 'createdAt-desc', label: 'Mais Recentes'}, {id: 'createdAt-asc', label: 'Mais Antigos'}, {id: 'title-asc', label: 'Título (A-Z)'}, {id: 'title-desc', label: 'Título (Z-A)'} ];
+
+    const handleCategoryToggle = (cat: string) => {
+        const newSet = new Set(tempSelectedCategories);
+        if (newSet.has(cat)) newSet.delete(cat);
+        else newSet.add(cat);
+        setTempSelectedCategories(newSet);
+    };
+
+    const handleGenreToggle = (genre: string) => {
+        const newSet = new Set(tempSelectedGenres);
+        if (newSet.has(genre)) newSet.delete(genre);
+        else newSet.add(genre);
+        setTempSelectedGenres(newSet);
+    };
+
+    const sortOptions: {id: SortType, label: string}[] = [
+        {id: 'createdAt-desc', label: 'Mais Recentes'},
+        {id: 'createdAt-asc', label: 'Mais Antigos'},
+        {id: 'title-asc', label: 'Título (A-Z)'},
+        {id: 'title-desc', label: 'Título (Z-A)'}
+    ];
+
     return (
         <Modal onClose={onClose}>
             <div className="p-6">
@@ -285,11 +366,18 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, availableCat
     );
 };
 
-interface ItemCardProps { item: ManagedWatchedItem; onClick: () => void; }
+
+// --- Componente Principal da Coleção ---
+
+interface ItemCardProps {
+    item: ManagedWatchedItem;
+    onClick: () => void;
+}
 const ItemCard: React.FC<ItemCardProps> = ({ item, onClick }) => {
     return (
         <div onClick={onClick} className="relative bg-gray-800 rounded-lg group cursor-pointer overflow-hidden shadow-lg border-2 border-transparent hover:border-indigo-500 transition-all duration-300 aspect-[2/3]">
             {item.posterUrl ? <img src={item.posterUrl} alt={`Pôster de ${item.title}`} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" loading="lazy" /> : <div className="w-full h-full bg-gray-700 flex items-center justify-center text-center p-2"><span className="text-gray-500 text-sm">Pôster não disponível</span></div>}
+            {/* Gradiente para legibilidade do texto */}
             <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 to-transparent pointer-events-none"></div>
             <div className="absolute bottom-0 left-0 right-0 p-3">
                 <h3 className="font-bold text-white text-base truncate leading-tight" title={item.title}>{item.title}</h3>
@@ -307,14 +395,17 @@ const CollectionView: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     
     const allItems: ManagedWatchedItem[] = useMemo(() => [...data.amei, ...data.gostei, ...data.meh, ...data.naoGostei], [data]);
+    
     const availableGenres = useMemo(() => Array.from(new Set(allItems.map(item => item.genre))).sort(), [allItems]);
     const availableCategories = useMemo(() => Array.from(new Set(allItems.map(item => item.type))).sort(), [allItems]);
 
+    // Estados dos filtros APLICADOS
     const [activeRatingFilter, setActiveRatingFilter] = useState<Rating | null>(null);
     const [appliedSortType, setAppliedSortType] = useState<SortType>('createdAt-desc');
     const [appliedCategories, setAppliedCategories] = useState<Set<string>>(new Set());
     const [appliedGenres, setAppliedGenres] = useState<Set<string>>(new Set());
 
+    // Estados TEMPORÁRIOS para o modal
     const [tempSortType, setTempSortType] = useState<SortType>(appliedSortType);
     const [tempSelectedCategories, setTempSelectedCategories] = useState<Set<string>>(appliedCategories);
     const [tempSelectedGenres, setTempSelectedGenres] = useState<Set<string>>(appliedGenres);
@@ -325,6 +416,7 @@ const CollectionView: React.FC = () => {
         if (activeRatingFilter) items = items.filter(item => item.rating === activeRatingFilter);
         if (appliedCategories.size > 0) items = items.filter(item => appliedCategories.has(item.type));
         if (appliedGenres.size > 0) items = items.filter(item => appliedGenres.has(item.genre));
+
         return items.sort((a, b) => {
             switch (appliedSortType) {
                 case 'title-asc': return a.title.localeCompare(b.title);
@@ -336,19 +428,52 @@ const CollectionView: React.FC = () => {
         });
     }, [allItems, activeRatingFilter, appliedCategories, appliedGenres, searchQuery, appliedSortType]);
 
-    const handleItemClick = (item: ManagedWatchedItem) => { setSelectedItem(item); setModal('details'); };
-    const openFilterModal = () => { setTempSortType(appliedSortType); setTempSelectedCategories(new Set(appliedCategories)); setTempSelectedGenres(new Set(appliedGenres)); setIsFilterModalOpen(true); };
-    const applyFilters = () => { setAppliedSortType(tempSortType); setAppliedCategories(tempSelectedCategories); setAppliedGenres(tempSelectedGenres); setIsFilterModalOpen(false); };
+    const handleItemClick = (item: ManagedWatchedItem) => {
+        setSelectedItem(item);
+        setModal('details');
+    };
+    
+    const openFilterModal = () => {
+        // Inicializa os filtros temporários com os valores já aplicados
+        setTempSortType(appliedSortType);
+        setTempSelectedCategories(new Set(appliedCategories));
+        setTempSelectedGenres(new Set(appliedGenres));
+        setIsFilterModalOpen(true);
+    };
+
+    const applyFilters = () => {
+        // Aplica os filtros temporários aos filtros reais
+        setAppliedSortType(tempSortType);
+        setAppliedCategories(tempSelectedCategories);
+        setAppliedGenres(tempSelectedGenres);
+        setIsFilterModalOpen(false);
+    };
 
     return (
         <div className="p-4">
             {modal === 'details' && selectedItem && <DetailsModal item={selectedItem} onClose={() => setModal(null)} />}
             {modal === 'add' && <AddModal onClose={() => setModal(null)} />}
-            <FilterModal isOpen={isFilterModalOpen} onClose={() => setIsFilterModalOpen(false)} availableCategories={availableCategories} availableGenres={availableGenres} tempSortType={tempSortType} setTempSortType={setTempSortType} tempSelectedCategories={tempSelectedCategories} setTempSelectedCategories={setTempSelectedCategories} tempSelectedGenres={tempSelectedGenres} setTempSelectedGenres={setTempSelectedGenres} onApply={applyFilters}/>
+            
+            <FilterModal
+                isOpen={isFilterModalOpen}
+                onClose={() => setIsFilterModalOpen(false)}
+                availableCategories={availableCategories}
+                availableGenres={availableGenres}
+                tempSortType={tempSortType}
+                setTempSortType={setTempSortType}
+                tempSelectedCategories={tempSelectedCategories}
+                setTempSelectedCategories={setTempSelectedCategories}
+                tempSelectedGenres={tempSelectedGenres}
+                setTempSelectedGenres={setTempSelectedGenres}
+                onApply={applyFilters}
+            />
+            
             <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
                 <h1 className="text-4xl font-bold text-white mb-4 sm:mb-0">Minha Coleção</h1>
                 <button onClick={() => setModal('add')} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg flex items-center gap-2 shadow-lg transition-transform transform hover:scale-105">[+] Adicionar</button>
             </div>
+
+            {/* BARRA DE FILTROS REDESENHADA */}
             <div className="bg-gray-800 p-4 rounded-lg mb-8 space-y-4">
                 <input type="text" placeholder="Buscar na coleção..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -363,6 +488,7 @@ const CollectionView: React.FC = () => {
                     </button>
                 </div>
             </div>
+
             {sortedAndFilteredItems.length === 0 ? (
                 <div className="text-center py-16"><p className="text-2xl text-gray-400">Nenhum resultado encontrado.</p><p className="text-gray-500 mt-2">Tente ajustar seus filtros.</p></div>
             ) : (
