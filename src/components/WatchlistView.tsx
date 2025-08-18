@@ -7,27 +7,38 @@ import { WatchlistItem, Rating, ManagedWatchedItem, WatchProvider, TMDbSearchRes
 import { getTMDbDetails, getProviders, searchTMDb } from '../services/TMDbService';
 import { updateWatchlistItem } from '../services/firestoreService';
 import { getLoveProbability } from '../services/RecommendationService';
-import { providerDeepLinks } from '../config/providerLinks'; // Importa nosso novo dicionário de links
+import { openProviderLinkFromTmdbName } from '../config/providerLinks'; // Importação Corrigida
+import { providerDeepLinks } from '../config/providerLinks';
 
-// --- Tipos Específicos da View ---
+// --- Tipos e Estilos (Corrigidos) ---
 type SortType = 'addedAt-desc' | 'addedAt-asc' | 'title-asc' | 'title-desc';
+
+const ratingOptions: { rating: Rating; emoji: string; label: string }[] = [
+    { rating: 'amei', emoji: '😍', label: 'Amei' },
+    { rating: 'gostei', emoji: '👍', label: 'Gostei' },
+    { rating: 'meh', emoji: '😐', label: 'Meh' },
+    { rating: 'naoGostei', emoji: '👎', label: 'Não Gostei' },
+];
 
 // --- Componentes ---
 
 const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () => void }) => ( <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}><div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>{children}</div></div>);
 
-// ### COMPONENTE ATUALIZADO COM ÍCONES CLICÁVEIS ###
 const WatchProvidersDisplay: React.FC<{ providers: WatchProvider[] }> = ({ providers }) => {
     return (
         <div className="flex flex-wrap gap-3">
             {providers.map(p => (
-                <a href={providers[p.provider_id] || '#'} key={p.provider_id} target="_blank" rel="noopener noreferrer" title={`Assistir em ${p.provider_name}`}>
+                <button 
+                    key={p.provider_id} 
+                    onClick={() => openProviderLinkFromTmdbName(p.provider_name)}
+                    title={`Tentar abrir em ${p.provider_name}`}
+                >
                     <img 
                         src={`https://image.tmdb.org/t/p/w92${p.logo_path}`} 
                         alt={p.provider_name}
                         className="w-12 h-12 rounded-lg object-cover bg-gray-700 transition-transform hover:scale-110"
                     />
-                </a>
+                </button>
             ))}
         </div>
     );
@@ -39,12 +50,6 @@ interface RateModalProps {
     onCancel: () => void;
 }
 const RateModal: React.FC<RateModalProps> = ({ item, onRate, onCancel }) => {
-    const ratingOptions: { rating: Rating; emoji: string; label: string }[] = [
-        { rating: 'amei', emoji: '😍', label: 'Amei' },
-        { rating: 'gostei', emoji: '👍', label: 'Gostei' },
-        { rating: 'meh', emoji: '😐', label: 'Meh' },
-        { rating: 'naoGostei', emoji: '👎', label: 'Não Gostei' },
-    ];
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4">
             <div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg p-6 text-center">
@@ -205,6 +210,8 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose, onMarkAsWatc
             .finally(() => setIsLoading(false));
     }, [item.id, item.tmdbMediaType]);
 
+    const watchProviders = details?.watchProviders;
+
     return (
         <Modal onClose={onClose}>
             <div className="p-6">
@@ -245,8 +252,8 @@ const DetailsModal: React.FC<DetailsModalProps> = ({ item, onClose, onMarkAsWatc
                 </div>
 
                 {isLoading ? <div className="h-20 mt-6 bg-gray-700 rounded animate-pulse"></div> : (
-                    details?.watchProviders?.flatrate && details.watchProviders.flatrate.length > 0 && (
-                        <div className="mt-6"><h3 className="text-xl font-semibold text-gray-300 mb-3">Onde Assistir</h3><WatchProvidersDisplay providers={details.watchProviders.flatrate} /></div>
+                    watchProviders?.flatrate && watchProviders.flatrate.length > 0 && (
+                        <div className="mt-6"><h3 className="text-xl font-semibold text-gray-300 mb-3">Onde Assistir</h3><WatchProvidersDisplay providers={watchProviders.flatrate} /></div>
                     )
                 )}
 
@@ -392,7 +399,7 @@ const WatchlistView: React.FC = () => {
             {filteredAndSortedItems.length === 0 ? (
                 <div className="text-center py-16">
                     <p className="text-2xl text-gray-400">{searchQuery ? 'Nenhum resultado encontrado.' : 'Sua lista está vazia.'}</p>
-                    <p className="text-gray-500 mt-2">{searchQuery ? 'Tente uma busca diferente.' : 'Salve recomendações do Gênio ou adicione manually.'}</p>
+                    <p className="text-gray-500 mt-2">{searchQuery ? 'Tente uma busca diferente.' : 'Salve recomendações do Gênio ou adicione manualmente.'}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
