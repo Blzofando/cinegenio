@@ -45,10 +45,9 @@ const shouldUpdate = async (): Promise<boolean> => {
 };
 
 /**
- * A função principal que orquestra a atualização.
+ * A função principal que orquestra a atualização. (VERSÃO ROBUSTA FINAL)
  */
 export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatchedData): Promise<void> => {
-    // Se não precisar atualizar, a função para aqui.
     if (!(await shouldUpdate())) {
         return;
     }
@@ -58,8 +57,9 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
     try {
         const formattedData = formatWatchedDataForPrompt(watchedData);
 
+        // 1. PROMPT ATUALIZADO: Pede para a IA focar apenas na seleção de IDs.
         const prompt = `
-            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
+            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** IDs de filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
 
             **PERFIL DE GOSTO DO USUÁRIO (Use como inspiração):**
             ${formattedData}
@@ -68,57 +68,54 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
             ${formattedData}
 
             REGRAS CRÍTICAS:
-            1. **EXCLUSÃO É PRIORIDADE MÁXIMA:** É absolutamente proibido incluir qualquer título da "LISTA DE EXCLUSÃO".
-            2. **CONTEÚDO JÁ LANÇADO:** Apenas títulos que o usuário pode assistir hoje. Sem lançamentos futuros.
+            1. **FOCO NO ID:** Sua única tarefa é selecionar os títulos e retornar seus IDs. Não precisa buscar pôster, sinopse, etc.
+            2. **EXCLUSÃO É PRIORIDADE MÁXIMA:** É absolutamente proibido incluir qualquer título da "LISTA DE EXCLUSÃO".
             3. **QUANTIDADE E VARIEDADE:** Gere EXATAMENTE 5 categorias criativas, cada uma com 10 títulos, totalizando 50. Pelo menos UMA categoria deve ser exclusivamente de "Séries".
-            4. **DADOS COMPLETOS E OBRIGATÓRIOS:** Para cada item, é OBRIGATÓRIO encontrar e fornecer todas as informações do schema, especialmente o \`poster_path\`. Itens sem pôster não são aceitáveis.
-            5. **FORMATO JSON:** A resposta DEVE ser um JSON válido, seguindo o schema abaixo.
+            4. **FORMATO JSON:** A resposta DEVE ser um JSON válido, seguindo o schema.
 
             **SCHEMA JSON DE RESPOSTA:**
             [
-            {
+              {
                 "categoryTitle": "Nome da Categoria 1",
                 "items": [
-                { "id": 123, "tmdbMediaType": "movie", "title": "Nome do Filme (Ano)", "poster_path": "/caminho_obrigatorio.jpg", "genre": "Ação", "synopsis": "Breve sinopse do filme.", "reason": "Motivo curto pelo qual este filme é relevante." },
-                ...
+                  { "id": 123, "tmdbMediaType": "movie", "reason": "Motivo curto pelo qual este ID é relevante." },
+                  ...
                 ]
-            },
-            ...
+              },
+              ...
             ]
         `;
 
-        // Aqui precisaríamos de uma nova função no GeminiService para tratar a resposta
-        // Por enquanto, vamos simular a chamada e o parse
         const aiResult = await fetchWeeklyRelevants(prompt);
 
-        // Enriquecemos os dados com a URL completa do pôster, com um "plano B" para garantir a imagem
+        // 2. BUSCA DE DETALHES NO TMDB: Agora nosso código busca os detalhes para cada ID retornado.
         const finalCategories = await Promise.all(
             aiResult.categories.map(async (category) => {
                 const enrichedItems = await Promise.all(
-                    category.items.map(async (item) => {
-                        let finalPosterPath = item.poster_path;
-
-                        // PLANO B: Se a IA não retornou o pôster, nós buscamos no TMDb.
-                        if (!finalPosterPath) {
-                            console.log(`Pôster faltando para "${item.title}", buscando no TMDb...`);
-                            try {
-                                const details = await getTMDbDetails(item.id, item.tmdbMediaType as 'movie' | 'tv');
-                                finalPosterPath = details.poster_path;
-                            } catch (e) {
-                                console.error(`Falha ao buscar pôster para o ID ${item.id}`, e);
-                            }
+                    category.items.map(async (itemFromAI) => {
+                        try {
+                            const details = await getTMDbDetails(itemFromAI.id, itemFromAI.tmdbMediaType as 'movie' | 'tv');
+                            // Construímos nosso objeto final com dados 100% precisos do TMDb
+                            return {
+                                id: itemFromAI.id,
+                                tmdbMediaType: itemFromAI.tmdbMediaType as 'movie' | 'tv',
+                                title: details.title || details.name || 'Título não encontrado',
+                                posterUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : undefined,
+                                genre: details.genres?.[0]?.name || 'Indefinido',
+                                synopsis: details.overview || 'Sinopse não disponível.',
+                                reason: itemFromAI.reason,
+                            };
+                        } catch (e) {
+                            console.error(`Falha ao buscar detalhes para o ID ${itemFromAI.id}`, e);
+                            return null; // Retorna nulo se um ID específico falhar
                         }
-
-                        return {
-                            ...item,
-                            posterUrl: finalPosterPath ? `https://image.tmdb.org/t/p/w500${finalPosterPath}` : undefined,
-                        };
                     })
                 );
 
                 return {
                     ...category,
-                    items: enrichedItems,
+                    // Filtramos qualquer item que possa ter falhado na busca de detalhes
+                    items: enrichedItems.filter(item => item !== null),
                 };
             })
         );
@@ -128,11 +125,9 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
             categories: finalCategories,
         };
 
-        // Salva a lista completa em um único documento
-        const listDocRef = doc(db, RELEVANTS_COLLECTION_NAME, 'currentList');
+        const listDocRef = doc(weeklyRelevantsCollection, 'currentList');
         await setDoc(listDocRef, weeklyRelevants);
 
-        // Atualiza o carimbo de data/hora da atualização
         const metadataRef = doc(db, METADATA_COLLECTION_NAME, METADATA_DOC_ID);
         await setDoc(metadataRef, { lastUpdate: new Date() });
 

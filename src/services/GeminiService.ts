@@ -104,32 +104,28 @@ const probabilitySchema = {
     required: ["loveProbability"]
 };
 
-// NOVO SCHEMA PARA OS RELEVANTES DA SEMANA
+// SCHEMA SIMPLIFICADO PARA RELEVANTES DA SEMANA (IA SÓ FORNECE IDs)
 const weeklyRelevantsSchema = {
     type: Type.OBJECT,
     properties: {
         categories: {
             type: Type.ARRAY,
-            description: "Um array de 5 a 7 categorias.",
+            description: "Um array de 5 categorias criativas.",
             items: {
                 type: Type.OBJECT,
                 properties: {
-                    categoryTitle: { type: Type.STRING, description: "O nome criativo para a categoria." },
+                    categoryTitle: { type: Type.STRING },
                     items: {
                         type: Type.ARRAY,
-                        description: "Uma lista de itens de mídia para esta categoria.",
+                        description: "Uma lista de 10 IDs de mídia para esta categoria.",
                         items: {
                             type: Type.OBJECT,
                             properties: {
-                                id: { type: Type.INTEGER, description: "O ID numérico do TMDb." },
+                                id: { type: Type.INTEGER },
                                 tmdbMediaType: { type: Type.STRING, enum: ['movie', 'tv'] },
-                                title: { type: Type.STRING, description: "O título oficial, incluindo o ano." },
-                                poster_path: { type: Type.STRING, description: "O caminho para o pôster do TMDb, ex: /caminho.jpg" },
-                                genre: { type: Type.STRING, description: "O gênero principal." },
-                                synopsis: { type: Type.STRING, description: "Uma sinopse curta de 1-2 frases." },
                                 reason: { type: Type.STRING, description: "Motivo curto pelo qual este item é relevante." }
                             },
-                            required: ["id", "tmdbMediaType", "title", "poster_path", "genre", "synopsis", "reason"]
+                            required: ["id", "tmdbMediaType", "reason"]
                         }
                     }
                 },
