@@ -1,7 +1,8 @@
 // src/App.tsx (Completo e Corrigido)
 
-import React, { useState, createContext, useEffect, useCallback } from 'react';
+import React, { useState, createContext, useEffect, useCallback, useContext } from 'react';
 import { WatchlistProvider } from './contexts/WatchlistContext';
+import { WatchlistContext } from './contexts/WatchlistContext';
 import { View, AllManagedWatchedData, Rating, ManagedWatchedItem, SuggestionFilters, TMDbSearchResult } from './types';
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from './services/firebaseConfig';
@@ -59,6 +60,7 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
     const [data, setData] = useState<AllManagedWatchedData>(initialData);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const { removeFromWatchlist } = useContext(WatchlistContext);
 
     useEffect(() => {
         setLoading(true);
@@ -108,13 +110,14 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
           };
 
           await addWatchedItem(newItem);
+          removeFromWatchlist(newItem.id);
       } catch(e) {
           console.error(e);
           throw new Error(e instanceof Error ? e.message : "Falha ao buscar informações do título.");
       } finally {
           setLoading(false);
       }
-  }, []);
+  }, [removeFromWatchlist]);
     
     const removeItem = useCallback(async (id: number) => {
        try {
