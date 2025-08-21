@@ -45,7 +45,7 @@ const shouldUpdate = async (): Promise<boolean> => {
 };
 
 /**
- * A função principal que orquestra a atualização. (VERSÃO ROBUSTA FINAL)
+ * A função principal que orquestra a atualização. (VERSÃO ROBUSTA FINAL E CORRIGIDA)
  */
 export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatchedData): Promise<void> => {
     if (!(await shouldUpdate())) {
@@ -57,9 +57,9 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
     try {
         const formattedData = formatWatchedDataForPrompt(watchedData);
 
-        // 1. PROMPT ATUALIZADO: Pede para a IA focar apenas na seleção de IDs.
+        // 1. O prompt continua o mesmo, pedindo apenas IDs para a IA.
         const prompt = `
-            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
+            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** IDs de filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
 
             **PERFIL DE GOSTO DO USUÁRIO (Use como inspiração):**
             ${formattedData}
@@ -68,7 +68,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
             ${formattedData}
 
             REGRAS CRÍTICAS:
-            1. **FOCO NO ID:** Sua tarefa é gerar essa lista e fazer uma busca no TMDB para obter detalhes do ID dos titulos.
+            1. **FOCO NO ID:** Sua única tarefa é selecionar os títulos e retornar seus IDs. Não precisa buscar pôster, sinopse, etc.
             2. **EXCLUSÃO É PRIORIDADE MÁXIMA:** É absolutamente proibido incluir qualquer título da "LISTA DE EXCLUSÃO".
             3. **QUANTIDADE E VARIEDADE:** Gere EXATAMENTE 5 categorias criativas, cada uma com 10 títulos, totalizando 50. Pelo menos UMA categoria deve ser exclusivamente de "Séries".
             4. **FORMATO JSON:** A resposta DEVE ser um JSON válido, seguindo o schema.
@@ -88,33 +88,40 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
 
         const aiResult = await fetchWeeklyRelevants(prompt);
 
-        // 2. BUSCA DE DETALHES NO TMDB: Agora nosso código busca os detalhes para cada ID retornado.
+        // 2. BUSCA DE DETALHES NO TMDB: Agora com tratamento de erros.
         const finalCategories = await Promise.all(
             aiResult.categories.map(async (category) => {
                 const enrichedItems = await Promise.all(
                     category.items.map(async (itemFromAI) => {
                         try {
                             const details = await getTMDbDetails(itemFromAI.id, itemFromAI.tmdbMediaType as 'movie' | 'tv');
-                            // Construímos nosso objeto final com dados 100% precisos do TMDb
-                            return {
+
+                            const finalItem: any = { // Usamos 'any' temporariamente para construir o objeto
                                 id: itemFromAI.id,
                                 tmdbMediaType: itemFromAI.tmdbMediaType as 'movie' | 'tv',
                                 title: details.title || details.name || 'Título não encontrado',
-                                posterUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : undefined,
                                 genre: details.genres?.[0]?.name || 'Indefinido',
                                 synopsis: details.overview || 'Sinopse não disponível.',
                                 reason: itemFromAI.reason,
                             };
+
+                            // Lógica para adicionar pôster APENAS se ele existir
+                            if (details.poster_path) {
+                                finalItem.posterUrl = `https://image.tmdb.org/t/p/w500${details.poster_path}`;
+                            }
+
+                            return finalItem;
+
                         } catch (e) {
-                            console.error(`Falha ao buscar detalhes para o ID ${itemFromAI.id}`, e);
-                            return null; // Retorna nulo se um ID específico falhar
+                            console.error(`Falha ao buscar detalhes para o ID ${itemFromAI.id} (provavelmente um ID inválido da IA), o item será ignorado.`, e);
+                            return null; // Retorna nulo se o ID for inválido (erro 404)
                         }
                     })
                 );
 
                 return {
                     ...category,
-                    // Filtramos qualquer item que possa ter falhado na busca de detalhes
+                    // Filtramos qualquer item que possa ter falhado (retornou nulo)
                     items: enrichedItems.filter(item => item !== null),
                 };
             })
