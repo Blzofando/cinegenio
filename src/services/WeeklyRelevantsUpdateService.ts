@@ -59,7 +59,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
 
         // 1. PROMPT ATUALIZADO: Pede para a IA focar apenas na seleção de IDs.
         const prompt = `
-            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** IDs de filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
+            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
 
             **PERFIL DE GOSTO DO USUÁRIO (Use como inspiração):**
             ${formattedData}
@@ -68,7 +68,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
             ${formattedData}
 
             REGRAS CRÍTICAS:
-            1. **FOCO NO ID:** Sua única tarefa é selecionar os títulos e retornar seus IDs. Não precisa buscar pôster, sinopse, etc.
+            1. **FOCO NO ID:** Sua tarefa é gerar essa lista e fazer uma busca no TMDB para obter detalhes do ID dos titulos.
             2. **EXCLUSÃO É PRIORIDADE MÁXIMA:** É absolutamente proibido incluir qualquer título da "LISTA DE EXCLUSÃO".
             3. **QUANTIDADE E VARIEDADE:** Gere EXATAMENTE 5 categorias criativas, cada uma com 10 títulos, totalizando 50. Pelo menos UMA categoria deve ser exclusivamente de "Séries".
             4. **FORMATO JSON:** A resposta DEVE ser um JSON válido, seguindo o schema.
