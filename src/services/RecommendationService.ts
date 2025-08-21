@@ -96,10 +96,20 @@ ${releasesForPrompt}`;
     const enrichedReleases = await Promise.all(result.releases.map(async (release) => {
         const originalRelease = allReleases.find(r => r.id === release.id);
         return {
-            ...release,
+            // Propriedades que vêm da IA (do objeto 'release')
+            id: release.id,
+            tmdbMediaType: release.tmdbMediaType,
+            title: release.title,
+            reason: release.reason,
+
+            // Propriedades que buscamos e adicionamos
             posterUrl: originalRelease?.poster_path ? `https://image.tmdb.org/t/p/w500${originalRelease.poster_path}` : undefined,
-            releaseDate: originalRelease?.release_date || originalRelease?.first_air_date || 'Em breve'
-        };
+            releaseDate: originalRelease?.release_date || originalRelease?.first_air_date || 'Em breve',
+
+            // Propriedades obrigatórias para satisfazer o tipo RadarItem
+            type: release.tmdbMediaType,
+            listType: 'upcoming'
+        } as RadarItem; // <-- ADICIONE ESTA PARTE
     }));
     return enrichedReleases;
 };

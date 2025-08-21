@@ -50,6 +50,7 @@ const toRelevantRadarItem = (item: TMDbSearchResult, reason: string): RelevantRa
         releaseDate: releaseDate,
         type: mediaType,
         reason: reason,
+        listType: 'upcoming', // <-- ADICIONE ESTA LINHA
     };
 
     if (item.poster_path) {
