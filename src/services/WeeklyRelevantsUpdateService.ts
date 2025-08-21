@@ -59,30 +59,28 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
         const formattedData = formatWatchedDataForPrompt(watchedData);
 
         const prompt = `
-            Você é o "CineGênio Pessoal". Sua tarefa é gerar uma lista de aproximadamente 50 filmes e séries JÁ LANÇADOS que sejam altamente relevantes para o perfil de gosto do usuário.
+            Você é o "CineGênio Pessoal". Sua tarefa é gerar uma lista de EXATAMENTE 50 filmes e séries JÁ LANÇADOS que sejam altamente relevantes para o perfil de gosto do usuário.
 
             REGRAS IMPORTANTES:
             1. EXCLUA terminantemente qualquer título que já esteja na lista de assistidos do usuário.
             2. Foque em títulos que já foram lançados. Não inclua lançamentos futuros.
-            3. Agrupe os 50 títulos em 5 a 7 categorias criativas e interessantes (ex: "Clássicos Modernos que Você Perdeu", "Ação Inteligente", "Comédias para Relaxar", "Joias Escondidas da Netflix", etc.).
-            4. A resposta DEVE ser um JSON válido, seguindo a estrutura exata do schema abaixo. Para cada item, use a busca na internet para encontrar o ID do TMDb, o tipo de mídia ('movie' ou 'tv'), o pôster, o gênero principal e uma sinopse curta.
+            3. Agrupe os 50 títulos em EXATAMENTE 5 categorias criativas e interessantes, com 10 TÍTULOS CADA.
+            4. Pelo menos UMA das 5 categorias DEVE ser exclusivamente sobre 'Séries'.
+            5. A resposta DEVE ser um JSON válido, seguindo a estrutura exata do schema abaixo. Para cada item, use a busca na internet para encontrar as informações pedidas.
 
             **PERFIL DE GOSTO DO USUÁRIO (NÃO INCLUIR ESTES TÍTULOS):**
             ${formattedData}
 
             **SCHEMA JSON DE RESPOSTA (um array de 'WeeklyRelevantCategory'):**
             [
-              {
+            {
                 "categoryTitle": "Nome da Categoria 1",
                 "items": [
-                  { "id": 123, "tmdbMediaType": "movie", "title": "Nome do Filme (Ano)", "poster_path": "/caminho_do_poster.jpg", "genre": "Ação", "synopsis": "Breve sinopse do filme.", "reason": "Motivo curto pelo qual este filme é relevante para o usuário." },
-                  ...
+                { "id": 123, "tmdbMediaType": "movie", "title": "Nome do Filme (Ano)", "poster_path": "/caminho_do_poster.jpg", "genre": "Ação", "synopsis": "Breve sinopse do filme.", "reason": "Motivo curto pelo qual este filme é relevante para o usuário." },
+                // ... mais 9 itens
                 ]
-              },
-              {
-                "categoryTitle": "Nome da Categoria 2",
-                "items": [ ... ]
-              }
+            },
+            // ... mais 4 categorias
             ]
         `;
 
