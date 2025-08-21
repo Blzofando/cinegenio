@@ -8,8 +8,11 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from './services/firebaseConfig';
 import { getFullMediaDetailsFromQuery } from './services/RecommendationService';
 import { addWatchedItem, removeWatchedItem, updateWatchedItem } from './services/firestoreService';
+// Adicione esta importação de serviço
+import { updateWeeklyRelevantsIfNeeded } from './services/WeeklyRelevantsUpdateService';
 
-// Importando todos os componentes
+// Adicione esta importação de componente
+import WeeklyRelevantsView from './components/WeeklyRelevantsView';
 import WatchlistView from './components/WatchlistView';
 import MainMenu from './components/MainMenu';
 import SuggestionView from './components/SuggestionView';
@@ -81,6 +84,7 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
             });
             setData(groupedData);
             setLoading(false);
+            updateWeeklyRelevantsIfNeeded(groupedData);
         }, (err) => {
             console.error("Erro ao buscar dados do Firestore: ", err);
             setError("Não foi possível carregar sua coleção.");
@@ -171,6 +175,8 @@ const App: React.FC = () => {
         return <ViewContainer onBack={handleBackToMenu}><DuelView /></ViewContainer>;
       case View.RADAR:
         return <ViewContainer onBack={handleBackToMenu}><RadarView /></ViewContainer>;
+      case View.WEEKLY_RELEVANTS:
+        return <ViewContainer onBack={handleBackToMenu}><WeeklyRelevantsView /></ViewContainer>;
       case View.CHALLENGE:
         return <ViewContainer onBack={handleBackToMenu}><ChallengeView /></ViewContainer>;
       case View.CHAT:

@@ -44,6 +44,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ setView }) => {
             <MenuButton icon="🔮" text="Será que vou gostar?" onClick={() => setView(View.PREDICT)} />
             <MenuButton icon="⚔️" text="Duelo de Títulos" onClick={() => setView(View.DUEL)} />
             <MenuButton icon="📡" text="Radar de Lançamentos" onClick={() => setView(View.RADAR)} />
+            <MenuButton icon="🗓️" text="Relevantes da Semana" onClick={() => setView(View.WEEKLY_RELEVANTS)} />
             <MenuButton icon="🏆" text="Desafio do Gênio" onClick={() => setView(View.CHALLENGE)} />
         </div>
       </div>

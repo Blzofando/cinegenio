@@ -132,6 +132,26 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
             };
             await addToWatchlist(newItem);
             onClose();
+            // --- INÍCIO DO NOVO BLOCO ---
+            // Busca os detalhes completos em segundo plano
+            getTMDbDetails(newItem.id, newItem.tmdbMediaType)
+                .then(details => {
+                    // Prepara apenas os detalhes extras que queremos salvar
+                    const extraDetails: Partial<WatchlistItem> = {
+                        synopsis: details.overview || "Sinopse não disponível.",
+                        watchProviders: getProviders(details),
+                        voteAverage: details.vote_average ? parseFloat(details.vote_average.toFixed(1)) : 0,
+                        genre: details.genres?.[0]?.name || 'N/A',
+                        type: details.media_type === 'movie' ? 'Filme' : 'Série',
+                    };
+                    // Atualiza o item no Firestore com os novos detalhes
+                    updateWatchlistItem(newItem.id, extraDetails);
+                })
+                .catch(err => {
+                    // Se falhar, apenas registramos no console, não incomodamos o usuário
+                    console.error("Falha ao buscar detalhes extras em segundo plano:", err);
+                });
+            // --- FIM DO NOVO BLOCO ---
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Falha ao adicionar título à watchlist.');
         }

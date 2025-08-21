@@ -32,12 +32,18 @@ export interface ManagedWatchedItem extends WatchedItem {
 }
 
 export interface WatchlistItem {
-  id: number;
-  tmdbMediaType: 'movie' | 'tv';
-  title: string;
-  posterUrl?: string;
-  addedAt: number;
-  loveProbability?: number;
+    id: number;
+    tmdbMediaType: 'movie' | 'tv';
+    title: string;
+    posterUrl?: string;
+    addedAt: number;
+    loveProbability?: number;
+    // Campos adicionados para o cache de detalhes
+    synopsis?: string;
+    watchProviders?: WatchProviders;
+    genre?: string;
+    voteAverage?: number;
+    type?: MediaType;
 }
 
 // ESTRUTURA DO DESAFIO ATUALIZADA
