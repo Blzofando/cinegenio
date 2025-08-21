@@ -35,6 +35,22 @@ const addToQueue = <T>(requestFn: () => Promise<T>): Promise<T> => {
 
 // --- Funções de Busca Internas ---
 
+// NOVA FUNÇÃO DE BUSCA PRECISA POR TÍTULO E ANO
+const internalSearchByTitleAndYear = async (title: string, year: number, mediaType: 'movie' | 'tv'): Promise<TMDbSearchResult | null> => {
+    const endpoint = mediaType === 'movie' ? 'movie' : 'tv';
+    const yearParam = mediaType === 'movie' ? 'year' : 'first_air_date_year';
+    const url = `${BASE_URL}/search/${endpoint}?query=${encodeURIComponent(title)}&${yearParam}=${year}&include_adult=false&language=pt-BR&page=1&api_key=${API_KEY}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        console.error(`Busca por ${title} (${year}) falhou com status: ${response.status}`);
+        return null; // Retorna nulo em caso de falha na busca
+    }
+    const data = await response.json();
+    // Retorna o primeiro resultado, que tem a maior probabilidade de ser o correto
+    return data.results?.[0] || null;
+};
+
 const internalSearchTMDb = async (query: string): Promise<TMDbSearchResult[]> => {
     const url = `${BASE_URL}/search/multi?query=${encodeURIComponent(query)}&include_adult=false&language=pt-BR&page=1&api_key=${API_KEY}`;
     const response = await fetch(url);
@@ -96,6 +112,10 @@ const internalGetTrending = async (): Promise<TMDbSearchResult[]> => {
 
 
 // --- Funções Exportadas ---
+
+export const searchByTitleAndYear = (title: string, year: number, mediaType: 'movie' | 'tv') => {
+    return addToQueue(() => internalSearchByTitleAndYear(title, year, mediaType));
+};
 
 export const searchTMDb = (query: string) => { 
     return addToQueue(() => internalSearchTMDb(query)); 
