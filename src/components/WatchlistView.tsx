@@ -140,24 +140,49 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
     return (
         <Modal onClose={onClose}>
             <form onSubmit={handleSubmit} className="p-6">
-                 <h2 className="text-2xl font-bold text-white mb-4">Adicionar à Watchlist</h2>
-                 <div className="relative">
-                    <input type="text" value={query} onChange={handleInputChange} className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Comece a digitar um título..."/>
-                    {isLoadingSuggestions && <div className="absolute right-3 top-3"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-400"></div></div>}
-                    {suggestions.length > 0 && (
-                        <ul className="absolute z-10 w-full bg-gray-700 border border-gray-600 rounded-lg mt-1 max-h-80 overflow-y-auto shadow-lg">
-                            {suggestions.map(s => (
-                                <li key={s.id} onClick={() => handleSuggestionClick(s)} className="p-3 hover:bg-indigo-600 cursor-pointer flex items-center gap-4">
-                                    <img src={s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : 'https://placehold.co/50x75/374151/9ca3af?text=?'} alt="poster" className="w-12 h-[72px] object-cover rounded-md bg-gray-800"/>
-                                    <div>
-                                        <p className="font-bold text-white">{s.title || s.name}</p>
-                                        <p className="text-sm text-gray-400">{s.media_type === 'movie' ? 'Filme' : 'Série'} ({new Date(s.release_date || s.first_air_date || '').getFullYear()})</p>
-                                    </div>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                <h2 className="text-2xl font-bold text-white mb-4">Adicionar à Watchlist</h2>
+
+                {/* Bloco 1: Mostra a busca se NADA foi selecionado */}
+                {!selectedSuggestion && (
+                    <div className="relative">
+                        <input type="text" value={query} onChange={handleInputChange} className="w-full bg-gray-700 text-white p-3 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Comece a digitar um título..."/>
+                        {isLoadingSuggestions && <div className="absolute right-3 top-3"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-400"></div></div>}
+                        {suggestions.length > 0 && (
+                            <ul className="absolute z-10 w-full bg-gray-700 border border-gray-600 rounded-lg mt-1 max-h-80 overflow-y-auto shadow-lg">
+                                {suggestions.map(s => (
+                                    <li key={s.id} onClick={() => handleSuggestionClick(s)} className="p-3 hover:bg-indigo-600 cursor-pointer flex items-center gap-4">
+                                        <img src={s.poster_path ? `https://image.tmdb.org/t/p/w92${s.poster_path}` : 'https://placehold.co/50x75/374151/9ca3af?text=?'} alt="poster" className="w-12 h-[72px] object-cover rounded-md bg-gray-800"/>
+                                        <div>
+                                            <p className="font-bold text-white">{s.title || s.name}</p>
+                                            <p className="text-sm text-gray-400">{s.media_type === 'movie' ? 'Filme' : 'Série'} ({new Date(s.release_date || s.first_air_date || '').getFullYear()})</p>
+                                        </div>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                )}
+
+                {/* Bloco 2: Mostra o card de confirmação se ALGO foi selecionado */}
+                {selectedSuggestion && (
+                    <div className="bg-gray-700/50 p-4 rounded-lg">
+                        <div className="flex items-start gap-4">
+                            <img src={selectedSuggestion.poster_path ? `https://image.tmdb.org/t/p/w92${selectedSuggestion.poster_path}` : 'https://placehold.co/80x120/374151/9ca3af?text=?'} alt="poster" className="w-20 h-[120px] object-cover rounded-md bg-gray-800"/>
+                            <div className="flex-grow">
+                                <p className="font-bold text-white text-lg">{selectedSuggestion.title || selectedSuggestion.name}</p>
+                                <p className="text-sm text-gray-400">{selectedSuggestion.media_type === 'movie' ? 'Filme' : 'Série'} ({new Date(selectedSuggestion.release_date || selectedSuggestion.first_air_date || '').getFullYear()})</p>
+                                <button 
+                                    type="button" 
+                                    onClick={() => { setSelectedSuggestion(null); setQuery(''); }} 
+                                    className="text-xs text-indigo-400 hover:underline mt-2"
+                                >
+                                    Trocar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {error && <p className="text-red-400 text-sm mt-2 text-center">{error}</p>}
                 <div className="flex justify-end gap-3 border-t border-gray-700 pt-4 mt-4">
                     <button type="button" onClick={onClose} className="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-4 rounded-lg">Cancelar</button>
