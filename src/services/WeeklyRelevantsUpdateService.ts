@@ -91,14 +91,37 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
         // Por enquanto, vamos simular a chamada e o parse
         const aiResult = await fetchWeeklyRelevants(prompt);
 
-        // Enriquecemos os dados com a URL completa do pôster
-        const finalCategories = aiResult.categories.map(category => ({
-            ...category,
-            items: category.items.map(item => ({
-                ...item,
-                posterUrl: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : undefined,
-            }))
-        }));
+        // Enriquecemos os dados com a URL completa do pôster, com um "plano B" para garantir a imagem
+        const finalCategories = await Promise.all(
+            aiResult.categories.map(async (category) => {
+                const enrichedItems = await Promise.all(
+                    category.items.map(async (item) => {
+                        let finalPosterPath = item.poster_path;
+
+                        // PLANO B: Se a IA não retornou o pôster, nós buscamos no TMDb.
+                        if (!finalPosterPath) {
+                            console.log(`Pôster faltando para "${item.title}", buscando no TMDb...`);
+                            try {
+                                const details = await getTMDbDetails(item.id, item.tmdbMediaType as 'movie' | 'tv');
+                                finalPosterPath = details.poster_path;
+                            } catch (e) {
+                                console.error(`Falha ao buscar pôster para o ID ${item.id}`, e);
+                            }
+                        }
+
+                        return {
+                            ...item,
+                            posterUrl: finalPosterPath ? `https://image.tmdb.org/t/p/w500${finalPosterPath}` : undefined,
+                        };
+                    })
+                );
+
+                return {
+                    ...category,
+                    items: enrichedItems,
+                };
+            })
+        );
 
         const weeklyRelevants: WeeklyRelevants = {
             generatedAt: Date.now(),
