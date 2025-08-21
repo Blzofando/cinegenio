@@ -10,7 +10,7 @@ import { getLoveProbability } from '../services/RecommendationService';
 import { openProviderLinkFromTmdbName } from '../config/providerLinks'; // Importação Corrigida
 import { providerDeepLinks } from '../config/providerLinks';
 
-// --- Tipos e Estilos (Corrigidos) ---
+// -=-- Tipos e Estilos (Corrigidos) ----
 type SortType = 'addedAt-desc' | 'addedAt-asc' | 'title-asc' | 'title-desc';
 
 const ratingOptions: { rating: Rating; emoji: string; label: string }[] = [
