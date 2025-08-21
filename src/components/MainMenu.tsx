@@ -41,6 +41,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ setView }) => {
             <MenuButton icon="💬" text="Fale com o Gênio" onClick={() => setView(View.CHAT)} />
             <MenuButton icon="🎲" text="Sugestão Aleatória" onClick={() => setView(View.RANDOM)} />
             <MenuButton icon="💡" text="Sugestão Personalizada" onClick={() => setView(View.SUGGESTION)} />
+            <MenuButton icon="🔮" text="Será que vou gostar?" onClick={() => setView(View.PREDICT)} />
             <MenuButton icon="⚔️" text="Duelo de Títulos" onClick={() => setView(View.DUEL)} />
             <MenuButton icon="📡" text="Radar de Lançamentos" onClick={() => setView(View.RADAR)} />
             <MenuButton icon="🏆" text="Desafio do Gênio" onClick={() => setView(View.CHALLENGE)} />

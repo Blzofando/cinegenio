@@ -11,8 +11,24 @@ import { updateTMDbRadarCacheIfNeeded } from '../services/TMDbRadarUpdateService
 import { getTMDbDetails } from '../services/TMDbService';
 import { openProviderLinkFromTmdbName } from '../config/providerLinks'; // ALTERAÇÃO: Importa a função correta
 
-// --- Componentes Internos ---
+// --- Componente de Esqueleto para o Card ---
+const CarouselCardSkeleton = () => (
+    <div className="flex-shrink-0 w-40">
+        <div className="w-full h-60 rounded-lg bg-gray-700 animate-pulse"></div>
+        <div className="w-3/4 h-4 mt-2 rounded bg-gray-700 animate-pulse"></div>
+        <div className="w-1/2 h-3 mt-2 rounded bg-gray-700 animate-pulse"></div>
+    </div>
+);
 
+// --- Componente de Esqueleto para o Carrossel ---
+const CarouselSkeleton = () => (
+    <div className="flex gap-4">
+        {Array.from({ length: 6 }).map((_, index) => (
+            <CarouselCardSkeleton key={index} />
+        ))}
+    </div>
+);
+// --- Componentes Internos ---
 const Modal = ({ children, onClose }: { children: React.ReactNode, onClose: () => void }) => ( <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}><div className="bg-gray-800 border border-gray-700 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-fade-in-up" onClick={e => e.stopPropagation()}>{children}</div></div>);
 
 // ALTERAÇÃO: Componente ATUALIZADO para tornar os ícones clicáveis
@@ -114,7 +130,7 @@ const Carousel: React.FC<CarouselProps> = ({ title, items, onItemClick, isRanked
     <div className="mb-12">
         <h2 className="text-2xl font-bold text-white mb-4">{title}</h2>
         <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
-            {isLoading ? <p className="text-gray-500">A carregar...</p> : items.length > 0 ? items.map((item, index) => <CarouselCard key={`${item.id}-${item.listType}`} item={item} onClick={() => onItemClick(item)} rank={isRanked ? index + 1 : undefined} />) : <p className="text-gray-500">Nenhum item nesta categoria por enquanto.</p>}
+            {isLoading ? <CarouselSkeleton /> : items.length > 0 ? items.map((item, index) => <CarouselCard key={`${item.id}-${item.listType}`} item={item} onClick={() => onItemClick(item)} rank={isRanked ? index + 1 : undefined} />) : <p className="text-gray-500">Nenhum item nesta categoria por enquanto.</p>}
         </div>
     </div>
 );
@@ -122,7 +138,7 @@ const Carousel: React.FC<CarouselProps> = ({ title, items, onItemClick, isRanked
 const RadarView: React.FC = () => {
     const { data: watchedData } = useContext(WatchedDataContext);
     const { addToWatchlist, isInWatchlist } = useContext(WatchlistContext);
-    
+    const [isRelevantLoading, setIsRelevantLoading] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [tmdbCache, setTmdbCache] = useState<RadarItem[]>([]);
     const [relevantReleases, setRelevantReleases] = useState<RadarItem[]>([]);
@@ -153,6 +169,7 @@ const RadarView: React.FC = () => {
             const items: RadarItem[] = [];
             snapshot.forEach(doc => items.push(doc.data() as RadarItem));
             setRelevantReleases(items);
+            if (isRelevantLoading) setIsRelevantLoading(false); // Adicione esta linha
         });
 
         return () => {
@@ -195,7 +212,7 @@ const RadarView: React.FC = () => {
                     <Carousel title="Top 10 no Prime Video" items={topPrime} onItemClick={setSelectedItem} isRanked={true} isLoading={isLoading && topPrime.length === 0} />
                     <Carousel title="Top 10 na Max" items={topMax} onItemClick={setSelectedItem} isRanked={true} isLoading={isLoading && topMax.length === 0} />
                     <Carousel title="Top 10 no Disney+" items={topDisney} onItemClick={setSelectedItem} isRanked={true} isLoading={isLoading && topDisney.length === 0} />
-                    <Carousel title="Relevante para Si (Em Breve)" items={upcoming} onItemClick={setSelectedItem} isLoading={upcoming.length === 0 && relevantReleases.length === 0} />
+                    <Carousel title="Relevante para Si (Em Breve)" items={upcoming} onItemClick={setSelectedItem} isLoading={isRelevantLoading} />
                 </div>
             )}
         </div>
