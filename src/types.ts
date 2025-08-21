@@ -140,6 +140,28 @@ export type SuggestionFilters = {
     keywords: string;
 };
 
+// --- NOVOS TIPOS PARA "RELEVANTES DA SEMANA" ---
+
+export interface WeeklyRelevantItem {
+  id: number;
+  tmdbMediaType: 'movie' | 'tv';
+  title: string;
+  posterUrl?: string;
+  genre: string;
+  synopsis: string;
+  reason: string; // O motivo pelo qual a IA recomendou este item
+}
+
+export interface WeeklyRelevantCategory {
+  categoryTitle: string;
+  items: WeeklyRelevantItem[];
+}
+
+export interface WeeklyRelevants {
+  generatedAt: number; // Usaremos um timestamp para saber quando a lista foi gerada
+  categories: WeeklyRelevantCategory[];
+}
+
 export enum View {
   MENU,
   RANDOM,
@@ -150,6 +172,7 @@ export enum View {
   WATCHLIST,
   DUEL,
   RADAR,
+  WEEKLY_RELEVANTS,
   CHALLENGE,
   CHAT
 }

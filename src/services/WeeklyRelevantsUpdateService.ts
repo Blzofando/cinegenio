@@ -3,7 +3,7 @@
 import { db } from './firebaseConfig';
 import { doc, getDoc, setDoc, Timestamp, collection } from "firebase/firestore";
 import { AllManagedWatchedData, WeeklyRelevants } from '../types';
-import { formatWatchedDataForPrompt } from './GeminiService';
+import { formatWatchedDataForPrompt, fetchWeeklyRelevants } from './GeminiService';
 import { getTMDbDetails } from './TMDbService';
 
 // Onde salvaremos a lista e os metadados de atualização
@@ -88,14 +88,10 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
 
         // Aqui precisaríamos de uma nova função no GeminiService para tratar a resposta
         // Por enquanto, vamos simular a chamada e o parse
-        // const aiResult = await fetchWeeklyRelevants(prompt); // <== FUNÇÃO A SER CRIADA NO GeminiService
-
-        // Simulação da resposta da IA (REMOVER EM PRODUÇÃO)
-        const mockAiResponse = '[{"categoryTitle":"Ação Inteligente","items":[{"id":27205,"tmdbMediaType":"movie","title":"A Origem (2010)","poster_path":"/9e3Dz7aCANy5ahtlF5K8LgL6e0A.jpg","genre":"Ação","synopsis":"Dom Cobb é um ladrão que rouba informações...","reason":"Baseado no seu gosto por ficção científica complexa."}]}]';
-        const aiResult = JSON.parse(mockAiResponse);
+        const aiResult = await fetchWeeklyRelevants(prompt);
 
         // Enriquecemos os dados com a URL completa do pôster
-        const finalCategories = aiResult.map(category => ({
+        const finalCategories = aiResult.categories.map(category => ({
             ...category,
             items: category.items.map(item => ({
                 ...item,

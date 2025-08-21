@@ -104,6 +104,42 @@ const probabilitySchema = {
     required: ["loveProbability"]
 };
 
+// NOVO SCHEMA PARA OS RELEVANTES DA SEMANA
+const weeklyRelevantsSchema = {
+    type: Type.OBJECT,
+    properties: {
+        categories: {
+            type: Type.ARRAY,
+            description: "Um array de 5 a 7 categorias.",
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    categoryTitle: { type: Type.STRING, description: "O nome criativo para a categoria." },
+                    items: {
+                        type: Type.ARRAY,
+                        description: "Uma lista de itens de mídia para esta categoria.",
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                id: { type: Type.INTEGER, description: "O ID numérico do TMDb." },
+                                tmdbMediaType: { type: Type.STRING, enum: ['movie', 'tv'] },
+                                title: { type: Type.STRING, description: "O título oficial, incluindo o ano." },
+                                poster_path: { type: Type.STRING, description: "O caminho para o pôster do TMDb, ex: /caminho.jpg" },
+                                genre: { type: Type.STRING, description: "O gênero principal." },
+                                synopsis: { type: Type.STRING, description: "Uma sinopse curta de 1-2 frases." },
+                                reason: { type: Type.STRING, description: "Motivo curto pelo qual este item é relevante." }
+                            },
+                            required: ["id", "tmdbMediaType", "title", "poster_path", "genre", "synopsis", "reason"]
+                        }
+                    }
+                },
+                required: ["categoryTitle", "items"]
+            }
+        }
+    },
+    required: ["categories"]
+};
+
 // SCHEMA DO DESAFIO ATUALIZADO PARA SER MAIS PRECISO
 const challengeSchema = {
     type: Type.OBJECT,
@@ -135,6 +171,21 @@ export const fetchRecommendation = async (prompt: string): Promise<Omit<Recommen
     }
     const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
     const response = await ai.models.generateContent({ model: "gemini-2.5-flash", contents: prompt, config: { responseMimeType: "application/json", responseSchema: recommendationSchema }});
+    return JSON.parse(response.text.trim());
+};
+
+// NOVA FUNÇÃO PARA OS RELEVANTES DA SEMANA
+export const fetchWeeklyRelevants = async (prompt: string): Promise<{ categories: any[] }> => {
+    if (!import.meta.env.VITE_GEMINI_API_KEY) {
+        // Mock de segurança caso a API Key não esteja configurada
+        return { categories: [{"categoryTitle":"Ação Inteligente","items":[{"id":27205,"tmdbMediaType":"movie","title":"A Origem (2010)","poster_path":"/9e3Dz7aCANy5ahtlF5K8LgL6e0A.jpg","genre":"Ação","synopsis":"Dom Cobb é um ladrão que rouba informações...","reason":"Baseado no seu gosto por ficção científica complexa."}]}] };
+    }
+    const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
+    const response = await ai.models.generateContent({ 
+        model: "gemini-1.5-flash", // Usando um modelo robusto para a tarefa complexa
+        contents: prompt, 
+        config: { responseMimeType: "application/json", responseSchema: weeklyRelevantsSchema }
+    });
     return JSON.parse(response.text.trim());
 };
 
