@@ -182,7 +182,7 @@ export const fetchWeeklyRelevants = async (prompt: string): Promise<{ categories
     }
     const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY as string });
     const response = await ai.models.generateContent({ 
-        model: "gemini-1.5-flash", // Usando um modelo robusto para a tarefa complexa
+        model: "gemini-2.5-flash", // Usando um modelo robusto para a tarefa complexa
         contents: prompt, 
         config: { responseMimeType: "application/json", responseSchema: weeklyRelevantsSchema }
     });

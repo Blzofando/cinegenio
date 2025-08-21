@@ -59,28 +59,31 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
         const formattedData = formatWatchedDataForPrompt(watchedData);
 
         const prompt = `
-            Você é o "CineGênio Pessoal". Sua tarefa é gerar uma lista de EXATAMENTE 50 filmes e séries JÁ LANÇADOS que sejam altamente relevantes para o perfil de gosto do usuário.
+            Você é o "CineGênio Pessoal". Sua tarefa é analisar o **PERFIL DE GOSTO DO USUÁRIO** e, considerando a **LISTA DE EXCLUSÃO**, gerar uma lista de **EXATAMENTE 50** filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
 
-            REGRAS IMPORTANTES:
-            1. EXCLUA terminantemente qualquer título que já esteja na lista de assistidos do usuário.
-            2. Foque em títulos que já foram lançados. Não inclua lançamentos futuros.
-            3. Agrupe os 50 títulos em EXATAMENTE 5 categorias criativas e interessantes, com 10 TÍTULOS CADA.
-            4. Pelo menos UMA das 5 categorias DEVE ser exclusivamente sobre 'Séries'.
-            5. A resposta DEVE ser um JSON válido, seguindo a estrutura exata do schema abaixo. Para cada item, use a busca na internet para encontrar as informações pedidas.
-
-            **PERFIL DE GOSTO DO USUÁRIO (NÃO INCLUIR ESTES TÍTULOS):**
+            **PERFIL DE GOSTO DO USUÁRIO (Use como inspiração):**
             ${formattedData}
 
-            **SCHEMA JSON DE RESPOSTA (um array de 'WeeklyRelevantCategory'):**
+            **LISTA DE EXCLUSÃO (NÃO inclua NENHUM destes títulos na sua resposta):**
+            ${formattedData}
+
+            REGRAS CRÍTICAS:
+            1. **EXCLUSÃO É PRIORIDADE MÁXIMA:** É absolutamente proibido incluir qualquer título da "LISTA DE EXCLUSÃO".
+            2. **CONTEÚDO JÁ LANÇADO:** Apenas títulos que o usuário pode assistir hoje. Sem lançamentos futuros.
+            3. **QUANTIDADE E VARIEDADE:** Gere EXATAMENTE 5 categorias criativas, cada uma com 10 títulos, totalizando 50. Pelo menos UMA categoria deve ser exclusivamente de "Séries".
+            4. **DADOS COMPLETOS E OBRIGATÓRIOS:** Para cada item, é OBRIGATÓRIO encontrar e fornecer todas as informações do schema, especialmente o \`poster_path\`. Itens sem pôster não são aceitáveis.
+            5. **FORMATO JSON:** A resposta DEVE ser um JSON válido, seguindo o schema abaixo.
+
+            **SCHEMA JSON DE RESPOSTA:**
             [
             {
                 "categoryTitle": "Nome da Categoria 1",
                 "items": [
-                { "id": 123, "tmdbMediaType": "movie", "title": "Nome do Filme (Ano)", "poster_path": "/caminho_do_poster.jpg", "genre": "Ação", "synopsis": "Breve sinopse do filme.", "reason": "Motivo curto pelo qual este filme é relevante para o usuário." },
-                // ... mais 9 itens
+                { "id": 123, "tmdbMediaType": "movie", "title": "Nome do Filme (Ano)", "poster_path": "/caminho_obrigatorio.jpg", "genre": "Ação", "synopsis": "Breve sinopse do filme.", "reason": "Motivo curto pelo qual este filme é relevante." },
+                ...
                 ]
             },
-            // ... mais 4 categorias
+            ...
             ]
         `;
 
