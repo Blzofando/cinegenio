@@ -34,7 +34,11 @@ ${formattedData}`;
     return { ...recommendationData, posterUrl };
 };
 
-export const getPredictionAsRecommendation = async (title: string, watchedData: AllManagedWatchedData): Promise<Recommendation> => {
+export const getPredictionAsRecommendation = async (item: { id: number; mediaType: 'movie' | 'tv' }, watchedData: AllManagedWatchedData): Promise<Recommendation> => {
+    // Busca os detalhes exatos usando o ID para obter o título correto
+    const details = await getTMDbDetails(item.id, item.mediaType);
+    const title = details.title || details.name;
+
     const formattedData = formatWatchedDataForPrompt(watchedData);
     const prompt = `Você é o "CineGênio Pessoal". Sua tarefa é analisar o título "${title}" e prever se o usuário vai gostar, com base no perfil de gosto dele. Use a busca na internet para encontrar informações sobre "${title}" (gênero, enredo, temas).
 
@@ -43,10 +47,13 @@ ${formattedData}
 
 **Sua Tarefa:**
 Analise "${title}" e gere uma resposta completa no formato JSON, seguindo o schema, com probabilidades de gosto e uma análise detalhada.`;
-    
+
     const recommendationData = await fetchRecommendation(prompt);
-    const posterUrl = await fetchPosterUrl(recommendationData.title) ?? undefined;
-    return { ...recommendationData, posterUrl };
+    // Usamos o posterUrl dos detalhes que já buscamos
+    const posterUrl = details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : undefined;
+
+    // Garantimos que o título da recomendação seja o título correto que analisamos
+    return { ...recommendationData, title, posterUrl };
 };
 
 export const getLoveProbability = async (title: string, watchedData: AllManagedWatchedData): Promise<number> => {
