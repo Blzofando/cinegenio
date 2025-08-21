@@ -184,18 +184,27 @@ const AddModal: React.FC<AddModalProps> = ({ onClose }) => {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!query.trim()) {
-            setError('O título não pode estar vazio.');
-            return;
-        }
-        setError('');
-        try {
-            await addItem(query, rating);
-            onClose();
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Falha ao adicionar título.');
-        }
+        e.preventDefault();
+        
+        // A verificação foi movida para ANTES do try/catch
+        if (!selectedSuggestion) {
+            setError('Por favor, selecione um título válido da lista de sugestões.');
+            return;
+        }
+        
+        if (!query.trim()) {
+            setError('O título não pode estar vazio.');
+            return;
+        }
+
+        setError('');
+        try {
+            // A chamada aqui agora está segura
+            await addItem(selectedSuggestion, rating);
+            onClose();
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Falha ao adicionar título.');
+        }
     };
 
     return (

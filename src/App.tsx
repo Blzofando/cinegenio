@@ -2,7 +2,7 @@
 
 import React, { useState, createContext, useEffect, useCallback } from 'react';
 import { WatchlistProvider } from './contexts/WatchlistContext';
-import { View, AllManagedWatchedData, Rating, ManagedWatchedItem, SuggestionFilters } from './types';
+import { View, AllManagedWatchedData, Rating, ManagedWatchedItem, SuggestionFilters, TMDbSearchResult } from './types';
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from './services/firebaseConfig';
 import { getFullMediaDetailsFromQuery } from './services/RecommendationService';
@@ -28,7 +28,7 @@ const initialData: AllManagedWatchedData = {
 interface IWatchedDataContext {
     data: AllManagedWatchedData;
     loading: boolean;
-    addItem: (title: string, rating: Rating) => Promise<void>;
+    addItem: (item: TMDbSearchResult | null, rating: Rating) => Promise<void>;
     removeItem: (id: number) => void;
     updateItem: (item: ManagedWatchedItem) => void;
 }
@@ -87,25 +87,34 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
         return () => unsubscribe();
     }, []);
     
-    const addItem = useCallback(async (title: string, rating: Rating) => {
-        setLoading(true);
-        try {
-            const mediaDetails = await getFullMediaDetailsFromQuery(title);
-            const newItem: ManagedWatchedItem = {
+    const addItem = useCallback(async (item: TMDbSearchResult | null, rating: Rating) => {
+      setLoading(true);
+      try {
+          if (!item) {
+              throw new Error("Nenhum item válido foi selecionado para adicionar.");
+          }
+
+          // Agora usamos o ID e o mediaType para uma busca precisa!
+          const mediaDetails = await getFullMediaDetailsFromQuery({ 
+              tmdbId: item.id, 
+              mediaType: item.media_type as 'movie' | 'tv' 
+          });
+
+          const newItem: ManagedWatchedItem = {
               ...mediaDetails,
               watchProviders: mediaDetails.watchProviders || { link: '', flatrate: [] },
               rating,
               createdAt: Date.now(),
-            };
+          };
 
-            await addWatchedItem(newItem);
-        } catch(e) {
-            console.error(e);
-            throw new Error(e instanceof Error ? e.message : "Falha ao buscar informações do título.");
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+          await addWatchedItem(newItem);
+      } catch(e) {
+          console.error(e);
+          throw new Error(e instanceof Error ? e.message : "Falha ao buscar informações do título.");
+      } finally {
+          setLoading(false);
+      }
+  }, []);
     
     const removeItem = useCallback(async (id: number) => {
        try {

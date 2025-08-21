@@ -174,7 +174,11 @@ const DuelView: React.FC = () => {
         setError(null);
         setResult(null);
         try {
-            const duelResult = await getDuelAnalysis(title1.title || title1.name || '', title2.title || title2.name || '', watchedData);
+            const duelResult = await getDuelAnalysis(
+                { id: title1.id, mediaType: title1.media_type as 'movie' | 'tv' }, 
+                { id: title2.id, mediaType: title2.media_type as 'movie' | 'tv' }, 
+                watchedData
+            );
             setResult(duelResult);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Ocorreu um erro desconhecido.';

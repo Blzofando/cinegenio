@@ -58,8 +58,14 @@ ${formattedData}`;
     return await fetchLoveProbability(prompt);
 }
 
-export const getDuelAnalysis = async (title1: string, title2: string, watchedData: AllManagedWatchedData): Promise<DuelResult> => {
+export const getDuelAnalysis = async (item1: { id: number; mediaType: 'movie' | 'tv' }, item2: { id: number; mediaType: 'movie' | 'tv' }, watchedData: AllManagedWatchedData): Promise<DuelResult> => {
     // ... (código existente inalterado)
+    const [details1, details2] = await Promise.all([
+        getTMDbDetails(item1.id, item1.mediaType),
+        getTMDbDetails(item2.id, item2.mediaType)
+    ]);
+    const title1 = details1.title || details1.name;
+    const title2 = details2.title || details2.name;
     const formattedData = formatWatchedDataForPrompt(watchedData);
     const prompt = `Você é o "CineGênio Pessoal". Sua tarefa é analisar um confronto entre dois títulos: "${title1}" e "${title2}". Compare ambos com o perfil de gosto do usuário e determine qual ele provavelmente preferiria. Use a busca na internet para encontrar informações sobre ambos os títulos.
 
@@ -114,8 +120,40 @@ ${releasesForPrompt}`;
     return enrichedReleases;
 };
 
-export const getFullMediaDetailsFromQuery = async (query: string): Promise<Omit<ManagedWatchedItem, 'rating' | 'createdAt'>> => {
-    // ... (código existente inalterado)
+export const getFullMediaDetailsFromQuery = async (params: { query?: string; tmdbId?: number; mediaType?: 'movie' | 'tv' }): Promise<Omit<ManagedWatchedItem, 'rating' | 'createdAt'>> => {
+    // Adicione este bloco
+    if (params.tmdbId && params.mediaType) {
+        const details = await getTMDbDetails(params.tmdbId, params.mediaType);
+        // A lógica abaixo para construir o objeto de retorno é uma cópia da que já existe no final da função
+        let mediaType: MediaType = 'Filme';
+        let titleWithYear = '';
+
+        if (params.mediaType === 'tv') {
+            const isAnime = details.original_language === 'ja' && details.genres.some((g: any) => g.id === 16);
+            mediaType = isAnime ? 'Anime' : 'Série';
+            titleWithYear = `${details.name} (${details.first_air_date ? new Date(details.first_air_date).getFullYear() : 'N/A'})`;
+        } else {
+            mediaType = 'Filme';
+            titleWithYear = `${details.title} (${details.release_date ? new Date(details.release_date).getFullYear() : 'N/A'})`;
+        }
+        
+        if (details.genres.some((g: any) => g.id === 10767 || g.id === 10763)) {
+            mediaType = 'Programa';
+        }
+
+        return {
+            id: params.tmdbId,
+            tmdbMediaType: params.mediaType,
+            title: titleWithYear,
+            type: mediaType,
+            genre: details.genres[0]?.name || 'Desconhecido',
+            synopsis: details.overview || 'Sinopse não disponível.',
+            posterUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : undefined,
+            voteAverage: details.vote_average ? parseFloat(details.vote_average.toFixed(1)) : 0,
+            watchProviders: getProviders(details),
+        };
+    }
+    const query = params.query || '';
     let searchResults = await searchTMDb(query);
     if (searchResults.length === 0) {
         const simplifiedQuery = query.replace(/\s*\([^)]*\)\s*/g, '').trim();
