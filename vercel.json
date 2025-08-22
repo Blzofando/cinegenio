@@ -1,20 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/update-relevants",
-      "schedule": "0 3 * * 1"
-    },
-    {
-      "path": "/api/update-relevant-radar",
-      "schedule": "0 5 * * 2"
-    },
-    {
-      "path": "/api/update-tmdb-radar",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/update-challenge",
-      "schedule": "0 3 * * 1"
+      "path": "/api/cron",
+      "schedule": "0 * * * *"
     }
   ]
 }
