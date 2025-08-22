@@ -21,7 +21,7 @@ const ChatView: React.FC<ChatViewProps> = ({ setView, setSuggestionFilters }) =>
 
             const foundFilters: SuggestionFilters = { category: null, genres: [], keywords: '' };
 
-            // Procura e remove a categoria
+            // Procura e remove a categoria 00001
             for (const key in categories) {
                 if (textToProcess.includes(` ${key} `)) {
                     foundFilters.category = categories[key];
