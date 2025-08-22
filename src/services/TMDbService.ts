@@ -48,7 +48,15 @@ const internalSearchByTitleAndYear = async (title: string, year: number, mediaTy
     }
     const data = await response.json();
     // Retorna o primeiro resultado, que tem a maior probabilidade de ser o correto
-    return data.results?.[0] || null;
+    // --- INÍCIO DA ALTERAÇÃO ---
+    const result = data.results?.[0];
+    if (result) {
+        // Adicionamos manualmente o media_type que estava faltando!
+        result.media_type = mediaType;
+        return result;
+    }
+    return null;
+    // --- FIM DA ALTERAÇÃO ---
 };
 
 const internalSearchTMDb = async (query: string): Promise<TMDbSearchResult[]> => {
