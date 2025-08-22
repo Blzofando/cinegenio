@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // TAREFA DE TERÇA-FEIRA: Relevantes da Semana
-    else if (dayOfWeek === 2) {
+    else if (dayOfWeek === 5) {
         taskToRun = 'Relevantes da Semana';
         console.log(`CRON SEMANAL: É Terça! Disparando ${taskToRun}...`);
         userData = await getUserData();
