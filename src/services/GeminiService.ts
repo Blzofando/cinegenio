@@ -104,7 +104,7 @@ const probabilitySchema = {
     required: ["loveProbability"]
 };
 
-// SCHEMA SIMPLIFICADO PARA RELEVANTES DA SEMANA (IA SÓ FORNECE TÍTULO E ANO)
+// ALTERAÇÃO: Schema simplificado para a IA focar na sugestão.
 const weeklyRelevantsSchema = {
     type: Type.OBJECT,
     properties: {
@@ -121,7 +121,7 @@ const weeklyRelevantsSchema = {
                         items: {
                             type: Type.OBJECT,
                             properties: {
-                                title: { type: Type.STRING, description: "O título oficial." },
+                                title: { type: Type.STRING, description: "O título oficial, sem o ano." },
                                 year: { type: Type.INTEGER, description: "O ano de lançamento." },
                                 media_type: { type: Type.STRING, enum: ['movie', 'tv'] },
                                 reason: { type: Type.STRING, description: "Motivo curto pelo qual este item é relevante." }

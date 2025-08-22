@@ -38,7 +38,7 @@ const addToQueue = <T>(requestFn: () => Promise<T>): Promise<T> => {
 // NOVA FUNÇÃO DE BUSCA PRECISA POR TÍTULO E ANO
 const internalSearchByTitleAndYear = async (title: string, year: number, mediaType: 'movie' | 'tv'): Promise<TMDbSearchResult | null> => {
     const endpoint = mediaType === 'movie' ? 'movie' : 'tv';
-    const yearParam = mediaType === 'movie' ? 'year' : 'first_air_date_year';
+    const yearParam = mediaType === 'movie' ? 'primary_release_year' : 'first_air_date_year';
     const url = `${BASE_URL}/search/${endpoint}?query=${encodeURIComponent(title)}&${yearParam}=${year}&include_adult=false&language=pt-BR&page=1&api_key=${API_KEY}`;
 
     const response = await fetch(url);

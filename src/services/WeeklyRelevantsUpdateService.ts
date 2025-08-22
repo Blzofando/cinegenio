@@ -44,9 +44,7 @@ const shouldUpdate = async (): Promise<boolean> => {
     return false;
 };
 
-/**
- * A função principal que orquestra a atualização. (VERSÃO FINAL COM VALIDAÇÃO TMDb)
- */
+// ALTERAÇÃO: Função inteira substituída para implementar o novo pipeline de validação.
 export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatchedData): Promise<void> => {
     if (!(await shouldUpdate())) {
         return;
@@ -57,7 +55,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
     try {
         const formattedData = formatWatchedDataForPrompt(watchedData);
 
-        // 1. PROMPT ATUALIZADO: Pede para a IA focar apenas na seleção de título + ano.
+        // 1. PROMPT ATUALIZADO: Pede para a IA focar apenas na seleção de título + ano + tipo.
         const prompt = `
             Você é o "CineGênio Pessoal". Sua tarefa é analisar o PERFIL DE GOSTO DO USUÁRIO e gerar uma lista de EXATAMENTE 50 filmes e séries JÁ LANÇADOS que sejam altamente relevantes.
 
@@ -68,7 +66,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
             ${formattedData}
 
             REGRAS CRÍTICAS:
-            1. FOCO EM TÍTULO E ANO: Sua tarefa é selecionar os títulos e retornar o nome e o ano de lançamento.
+            1. FOCO NA SUGESTÃO: Sua tarefa é selecionar os títulos e retornar o nome, o ano de lançamento e o tipo de mídia ('movie' ou 'tv').
             2. EXCLUSÃO É PRIORIDADE MÁXIMA: É proibido incluir qualquer título da "LISTA DE EXCLUSÃO".
             3. QUANTIDADE E VARIEDADE: Gere EXATAMENTE 5 categorias criativas, cada uma com 10 títulos. Pelo menos UMA categoria deve ser de "Séries".
             4. FORMATO JSON: A resposta DEVE ser um JSON válido, seguindo o schema.
@@ -94,7 +92,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
                 const enrichedItems = await Promise.all(
                     category.items.map(async (itemFromAI) => {
                         try {
-                            // Usamos a nossa nova função de busca precisa
+                            // ETAPA DE VALIDAÇÃO: Usamos nossa função "detetive" para encontrar o ID oficial.
                             const tmdbResult = await searchByTitleAndYear(itemFromAI.title, itemFromAI.year, itemFromAI.media_type as 'movie' | 'tv');
 
                             if (!tmdbResult) {
@@ -102,18 +100,24 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
                                 return null;
                             }
 
-                            // Buscamos os detalhes completos com o ID que encontramos
+                            // ETAPA DE ENRIQUECIMENTO: Com o ID validado, buscamos os detalhes completos.
                             const details = await getTMDbDetails(tmdbResult.id, tmdbResult.media_type as 'movie' | 'tv');
 
-                            return {
+                            const finalItem: any = {
                                 id: details.id,
-                                tmdbMediaType: details.media_type as 'movie' | 'tv',
+                                tmdbMediaType: tmdbResult.media_type as 'movie' | 'tv',
                                 title: details.title || details.name || 'Título não encontrado',
-                                posterUrl: details.poster_path ? `https://image.tmdb.org/t/p/w500${details.poster_path}` : undefined,
                                 genre: details.genres?.[0]?.name || 'Indefinido',
                                 synopsis: details.overview || 'Sinopse não disponível.',
                                 reason: itemFromAI.reason,
                             };
+
+                            if (details.poster_path) {
+                                finalItem.posterUrl = `https://image.tmdb.org/t/p/w500${details.poster_path}`;
+                            }
+
+                            return finalItem;
+
                         } catch (e) {
                             console.error(`Falha ao processar "${itemFromAI.title}":`, e);
                             return null;
@@ -128,9 +132,11 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
             })
         );
 
+        const nonEmptyCategories = finalCategories.filter(cat => cat.items.length > 0);
+
         const weeklyRelevants: WeeklyRelevants = {
             generatedAt: Date.now(),
-            categories: finalCategories,
+            categories: nonEmptyCategories,
         };
 
         const listDocRef = doc(weeklyRelevantsCollection, 'currentList');
@@ -139,7 +145,7 @@ export const updateWeeklyRelevantsIfNeeded = async (watchedData: AllManagedWatch
         const metadataRef = doc(db, METADATA_COLLECTION_NAME, METADATA_DOC_ID);
         await setDoc(metadataRef, { lastUpdate: new Date() });
 
-        console.log(`Relevantes da Semana atualizados! ${finalCategories.flatMap(c => c.items).length} itens salvos.`);
+        console.log(`Relevantes da Semana atualizados! ${nonEmptyCategories.flatMap(c => c.items).length} itens salvos.`);
 
     } catch (error) {
         console.error("Falha ao atualizar a lista de Relevantes da Semana:", error);
