@@ -8,10 +8,14 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from './services/firebaseConfig';
 import { getFullMediaDetailsFromQuery } from './services/RecommendationService';
 import { addWatchedItem, removeWatchedItem, updateWatchedItem } from './services/firestoreService';
-// Adicione esta importação de serviço
-import { updateWeeklyRelevantsIfNeeded } from './services/WeeklyRelevantsUpdateService';
 
-// Adicione esta importação de componente
+// ALTERAÇÃO: Importando todos os serviços de atualização automática
+import { updateWeeklyRelevantsIfNeeded } from './services/WeeklyRelevantsUpdateService';
+import { updateRelevantReleasesIfNeeded } from './services/RelevantRadarUpdateService';
+import { updateTMDbRadarCacheIfNeeded } from './services/TMDbRadarUpdateService';
+import { getWeeklyChallenge } from './services/ChallengeService';
+
+// Importando todos os componentes de visualização
 import WeeklyRelevantsView from './components/WeeklyRelevantsView';
 import WatchlistView from './components/WatchlistView';
 import MainMenu from './components/MainMenu';
@@ -44,18 +48,17 @@ export const WatchedDataContext = createContext<IWatchedDataContext>({
     updateItem: () => {},
 });
 
-// ### COMPONENTE ATUALIZADO ###
 const ViewContainer = ({ children, onBack }: { children: React.ReactNode, onBack: () => void }) => (
     <div className="min-h-screen bg-gray-900 text-white relative">
-      <button 
-        onClick={onBack}
-        className="fixed top-4 left-4 bg-gray-800 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 z-50 shadow-lg"
-      >
-        &larr; Voltar ao Menu
-      </button>
-      <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8">
-        {children}
-      </div>
+        <button
+            onClick={onBack}
+            className="fixed top-4 left-4 bg-gray-800 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-300 z-50 shadow-lg"
+        >
+            &larr; Voltar ao Menu
+        </button>
+        <div className="pt-20 pb-8 px-4 sm:px-6 md:px-8">
+            {children}
+        </div>
     </div>
 );
 
@@ -78,13 +81,35 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
                 acc[rating].push(item);
                 return acc;
             }, { amei: [], gostei: [], meh: [], naoGostei: [] } as AllManagedWatchedData);
+
             Object.keys(groupedData).forEach(key => {
                 const ratingKey = key as Rating;
                 groupedData[ratingKey].sort((a, b) => b.createdAt - a.createdAt);
             });
+            
             setData(groupedData);
             setLoading(false);
-            updateWeeklyRelevantsIfNeeded(groupedData);
+
+            // --- ALTERAÇÃO: Disparando todas as atualizações em segundo plano ---
+            console.log("Disparando atualizações automáticas em segundo plano...");
+
+            // 1. Atualiza os "Relevantes da Semana"
+            updateWeeklyRelevantsIfNeeded(groupedData)
+                .catch(err => console.error("Falha na atualização silenciosa dos Relevantes da Semana:", err));
+
+            // 2. Atualiza o Desafio Semanal
+            getWeeklyChallenge(groupedData)
+                .catch(err => console.error("Falha na atualização silenciosa do Desafio Semanal:", err));
+
+            // 3. Atualiza o Radar de Relevantes (IA)
+            updateRelevantReleasesIfNeeded(groupedData)
+                .catch(err => console.error("Falha na atualização silenciosa do Radar Relevante:", err));
+
+            // 4. Atualiza o Radar Geral (TMDb)
+            updateTMDbRadarCacheIfNeeded()
+                .catch(err => console.error("Falha na atualização silenciosa do Radar TMDb:", err));
+            // --- FIM DA ALTERAÇÃO ---
+
         }, (err) => {
             console.error("Erro ao buscar dados do Firestore: ", err);
             setError("Não foi possível carregar sua coleção.");
@@ -94,41 +119,37 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
     
     const addItem = useCallback(async (item: TMDbSearchResult | null, rating: Rating) => {
-      setLoading(true);
-      try {
-          if (!item) {
-              throw new Error("Nenhum item válido foi selecionado para adicionar.");
-          }
-
-          // Agora usamos o ID e o mediaType para uma busca precisa!
-          const mediaDetails = await getFullMediaDetailsFromQuery({ 
-              tmdbId: item.id, 
-              mediaType: item.media_type as 'movie' | 'tv' 
-          });
-
-          const newItem: ManagedWatchedItem = {
-              ...mediaDetails,
-              watchProviders: mediaDetails.watchProviders || { link: '', flatrate: [] },
-              rating,
-              createdAt: Date.now(),
-          };
-
-          await addWatchedItem(newItem);
-          removeFromWatchlist(newItem.id);
-      } catch(e) {
-          console.error(e);
-          throw new Error(e instanceof Error ? e.message : "Falha ao buscar informações do título.");
-      } finally {
-          setLoading(false);
-      }
-  }, [removeFromWatchlist]);
+        setLoading(true);
+        try {
+            if (!item) {
+                throw new Error("Nenhum item válido foi selecionado para adicionar.");
+            }
+            const mediaDetails = await getFullMediaDetailsFromQuery({ 
+                tmdbId: item.id, 
+                mediaType: item.media_type as 'movie' | 'tv' 
+            });
+            const newItem: ManagedWatchedItem = {
+                ...mediaDetails,
+                watchProviders: mediaDetails.watchProviders || { link: '', flatrate: [] },
+                rating,
+                createdAt: Date.now(),
+            };
+            await addWatchedItem(newItem);
+            removeFromWatchlist(newItem.id);
+        } catch(e) {
+            console.error(e);
+            throw new Error(e instanceof Error ? e.message : "Falha ao buscar informações do título.");
+        } finally {
+            setLoading(false);
+        }
+    }, [removeFromWatchlist]);
     
     const removeItem = useCallback(async (id: number) => {
-       try {
-           await removeWatchedItem(id);
-       } catch (error) {
-           console.error("Falha ao remover item:", error);
-       }
+        try {
+            await removeWatchedItem(id);
+        } catch (error) {
+            console.error("Falha ao remover item:", error);
+        }
     }, []);
 
     const updateItem = useCallback(async (updatedItem: ManagedWatchedItem) => {
@@ -147,54 +168,53 @@ const WatchedDataProvider = ({ children }: { children: React.ReactNode }) => {
     );
 };
 
-
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<View>(View.MENU);
-  const [chatFilters, setChatFilters] = useState<SuggestionFilters | null>(null);
+    const [currentView, setCurrentView] = useState<View>(View.MENU);
+    const [chatFilters, setChatFilters] = useState<SuggestionFilters | null>(null);
 
-  const renderView = () => {
-    const handleBackToMenu = () => setCurrentView(View.MENU);
-    const clearChatFilters = () => setChatFilters(null);
+    const renderView = () => {
+        const handleBackToMenu = () => setCurrentView(View.MENU);
+        const clearChatFilters = () => setChatFilters(null);
 
-    switch (currentView) {
-      case View.MENU:
-        return <MainMenu setView={setCurrentView} />;
-      case View.SUGGESTION:
-        return ( <ViewContainer onBack={handleBackToMenu}><SuggestionView preloadedFilters={chatFilters} clearPreloadedFilters={clearChatFilters} /></ViewContainer> );
-      case View.STATS:
-        return <ViewContainer onBack={handleBackToMenu}><StatsView /></ViewContainer>;
-      case View.COLLECTION:
-        return <ViewContainer onBack={handleBackToMenu}><CollectionView /></ViewContainer>;
-      case View.RANDOM:
-        return <ViewContainer onBack={handleBackToMenu}><RandomView /></ViewContainer>;
-      case View.PREDICT:
-        return <ViewContainer onBack={handleBackToMenu}><PredictView /></ViewContainer>;
-      case View.WATCHLIST:
-        return <ViewContainer onBack={handleBackToMenu}><WatchlistView /></ViewContainer>;
-      case View.DUEL:
-        return <ViewContainer onBack={handleBackToMenu}><DuelView /></ViewContainer>;
-      case View.RADAR:
-        return <ViewContainer onBack={handleBackToMenu}><RadarView /></ViewContainer>;
-      case View.WEEKLY_RELEVANTS:
-        return <ViewContainer onBack={handleBackToMenu}><WeeklyRelevantsView /></ViewContainer>;
-      case View.CHALLENGE:
-        return <ViewContainer onBack={handleBackToMenu}><ChallengeView /></ViewContainer>;
-      case View.CHAT:
-        return ( <ViewContainer onBack={handleBackToMenu}><ChatView setView={setCurrentView} setSuggestionFilters={setChatFilters} /></ViewContainer> );
-      default:
-        return <MainMenu setView={setCurrentView} />;
-    }
-  };
+        switch (currentView) {
+            case View.MENU:
+                return <MainMenu setView={setCurrentView} />;
+            case View.SUGGESTION:
+                return ( <ViewContainer onBack={handleBackToMenu}><SuggestionView preloadedFilters={chatFilters} clearPreloadedFilters={clearChatFilters} /></ViewContainer> );
+            case View.STATS:
+                return <ViewContainer onBack={handleBackToMenu}><StatsView /></ViewContainer>;
+            case View.COLLECTION:
+                return <ViewContainer onBack={handleBackToMenu}><CollectionView /></ViewContainer>;
+            case View.RANDOM:
+                return <ViewContainer onBack={handleBackToMenu}><RandomView /></ViewContainer>;
+            case View.PREDICT:
+                return <ViewContainer onBack={handleBackToMenu}><PredictView /></ViewContainer>;
+            case View.WATCHLIST:
+                return <ViewContainer onBack={handleBackToMenu}><WatchlistView /></ViewContainer>;
+            case View.DUEL:
+                return <ViewContainer onBack={handleBackToMenu}><DuelView /></ViewContainer>;
+            case View.RADAR:
+                return <ViewContainer onBack={handleBackToMenu}><RadarView /></ViewContainer>;
+            case View.WEEKLY_RELEVANTS:
+                return <ViewContainer onBack={handleBackToMenu}><WeeklyRelevantsView /></ViewContainer>;
+            case View.CHALLENGE:
+                return <ViewContainer onBack={handleBackToMenu}><ChallengeView /></ViewContainer>;
+            case View.CHAT:
+                return ( <ViewContainer onBack={handleBackToMenu}><ChatView setView={setCurrentView} setSuggestionFilters={setChatFilters} /></ViewContainer> );
+            default:
+                return <MainMenu setView={setCurrentView} />;
+        }
+    };
 
-  return (
-    <WatchlistProvider>
-        <WatchedDataProvider>
-            <div className="App">
-                {renderView()}
-            </div>
-        </WatchedDataProvider>
-    </WatchlistProvider>
-  );
+    return (
+        <WatchlistProvider>
+            <WatchedDataProvider>
+                <div className="App">
+                    {renderView()}
+                </div>
+            </WatchedDataProvider>
+        </WatchlistProvider>
+    );
 };
 
 export default App;
