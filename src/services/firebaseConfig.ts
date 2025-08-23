@@ -1,28 +1,20 @@
-import { initializeApp, getApps } from "firebase/app";
+// services/firebaseConfig.ts
+
+import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-import * as admin from "firebase-admin";
 
-const isServer = typeof window === 'undefined';
+// TODO: Substitua o objeto abaixo pelas credenciais do SEU projeto Firebase
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
 
-if (isServer) {
-    if (!admin.apps.length) {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_PRIVATE_KEY as string);
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
-    }
-} else {
-    if (!getApps().length) {
-        const firebaseConfig = {
-            apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-            authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-            projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-            storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-            messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-            appId: import.meta.env.VITE_FIREBASE_APP_ID
-        };
-        initializeApp(firebaseConfig);
-    }
-}
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
 
-export const db = isServer ? admin.firestore() : getFirestore();
+// Exporta a instância do banco de dados para usarmos em outros lugares
+export const db = getFirestore(app);
