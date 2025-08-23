@@ -1,4 +1,4 @@
-// src/pages/api/cron.ts (VERSÃO FINAL COM AGENDA INTERCALADA)
+// src/pages/api/cron-master.ts
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getWatchedItems } from '../../services/firestoreService';
@@ -10,6 +10,7 @@ import { updateRelevantReleasesIfNeeded } from '../../services/RelevantRadarUpda
 import { updateTMDbRadarCacheIfNeeded } from '../../services/TMDbRadarUpdateService';
 import { getWeeklyChallenge } from '../../services/ChallengeService';
 
+// Função auxiliar para buscar os dados do usuário, pois o servidor não tem o contexto do App
 const getUserData = async (): Promise<AllManagedWatchedData> => {
     const watchedItems: ManagedWatchedItem[] = await getWatchedItems();
     return watchedItems.reduce((acc, item) => {
@@ -23,57 +24,54 @@ export default async function handler(
   req: VercelRequest,
   res: VercelResponse
 ) {
+  // Proteção para garantir que só a Vercel (ou alguém com a senha) possa rodar esta função
   if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ message: 'Acesso não autorizado.' });
   }
 
   const now = new Date();
-  const dayOfWeek = now.getUTCDay(); // 0 = Domingo, 1 = Segunda, 2 = Terça
-  const tasksRun: string[] = [];
-  let userData: AllManagedWatchedData | null = null;
+  // getUTCDay() é importante pois o servidor da Vercel roda em UTC. 
+  // Domingo = 0, Segunda = 1, Terça = 2, Quarta = 3, etc.
+  const dayOfWeek = now.getUTCDay(); 
+  let taskRun: string | null = null;
 
   try {
-    // --- AGENDA DIÁRIA INTELIGENTE ---
+    let userData: AllManagedWatchedData;
 
-    // TAREFA DE SEGUNDA-FEIRA
+    // --- A AGENDA INTELIGENTE ---
+
+    // SEGUNDA-FEIRA (dayOfWeek === 1)
     if (dayOfWeek === 1) {
-        console.log('CRON: É Segunda! Disparando tarefas semanais...');
+        taskRun = 'Desafio Semanal';
+        console.log(`CRON MESTRE: É Segunda! Disparando ${taskRun}...`);
         userData = await getUserData();
         await getWeeklyChallenge(userData);
-        tasksRun.push('Desafio Semanal');
     }
-
-    // TAREFA DE TERÇA-FEIRA
+    // TERÇA-FEIRA (dayOfWeek === 2)
     else if (dayOfWeek === 2) {
-        console.log('CRON: É Terça! Disparando tarefas semanais...');
+        taskRun = 'Relevantes da Semana';
+        console.log(`CRON MESTRE: É Terça! Disparando ${taskRun}...`);
         userData = await getUserData();
         await updateWeeklyRelevantsIfNeeded(userData);
-        tasksRun.push('Relevantes da Semana');
     }
-
-    // TAREFA DE QUARTA-FEIRA
+    // QUARTA-FEIRA (dayOfWeek === 3)
     else if (dayOfWeek === 3) {
-        console.log('CRON: É Quarta! Disparando tarefas semanais...');
+        taskRun = 'Radar Relevante (IA)';
+        console.log(`CRON MESTRE: É Quarta! Disparando ${taskRun}...`);
         userData = await getUserData();
         await updateRelevantReleasesIfNeeded(userData);
-        tasksRun.push('Radar Relevante (IA)');
     }
-
-    // TAREFAS DOS OUTROS DIAS (QUINTA A DOMINGO)
+    // OUTROS DIAS (QUINTA, SEXTA, SÁBADO, DOMINGO)
     else {
-        console.log('CRON: Disparando atualização diária do Radar Geral (TMDb)...');
+        taskRun = 'Radar Geral (TMDb)';
+        console.log(`CRON MESTRE: Disparando atualização diária do ${taskRun}...`);
         await updateTMDbRadarCacheIfNeeded();
-        tasksRun.push('Radar Geral (TMDb)');
     }
 
-    if (tasksRun.length === 0) {
-        res.status(200).json({ message: 'Nenhuma tarefa semanal agendada para hoje.' });
-    } else {
-        res.status(200).json({ message: `Tarefa executada com sucesso: ${tasksRun.join(', ')}` });
-    }
+    res.status(200).json({ message: `Tarefa executada com sucesso: ${taskRun}` });
 
   } catch (error) {
-    console.error('Erro durante a execução do Cron Job Mestre:', error);
+    console.error(`Erro no Cron Job Mestre ao executar ${taskRun || 'tarefa desconhecida'}:`, error);
     res.status(500).json({ message: 'Ocorreu um erro no servidor durante a execução da tarefa agendada.' });
   }
 }
