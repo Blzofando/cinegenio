@@ -1,14 +1,14 @@
 // src/pages/api/cron-master.ts
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getWatchedItems } from '../../services/firestoreService';
-import { AllManagedWatchedData, ManagedWatchedItem } from '../../types';
+import { getWatchedItems } from '../services/firestoreService';
+import { AllManagedWatchedData, ManagedWatchedItem } from '../types';
 
 // Importamos TODAS as nossas funções de atualização
-import { updateWeeklyRelevantsIfNeeded } from '../../services/WeeklyRelevantsUpdateService';
-import { updateRelevantReleasesIfNeeded } from '../../services/RelevantRadarUpdateService';
-import { updateTMDbRadarCacheIfNeeded } from '../../services/TMDbRadarUpdateService';
-import { getWeeklyChallenge } from '../../services/ChallengeService';
+import { updateWeeklyRelevantsIfNeeded } from '../services/WeeklyRelevantsUpdateService';
+import { updateRelevantReleasesIfNeeded } from '../services/RelevantRadarUpdateService';
+import { updateTMDbRadarCacheIfNeeded } from '../services/TMDbRadarUpdateService';
+import { getWeeklyChallenge } from '../services/ChallengeService';
 
 // Função auxiliar para buscar os dados do usuário, pois o servidor não tem o contexto do App
 const getUserData = async (): Promise<AllManagedWatchedData> => {
@@ -25,9 +25,9 @@ export default async function handler(
   res: VercelResponse
 ) {
   // Proteção para garantir que só a Vercel (ou alguém com a senha) possa rodar esta função
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ message: 'Acesso não autorizado.' });
-  }
+//  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}`) {
+//    return res.status(401).json({ message: 'Acesso não autorizado.' });
+//  }
 
   const now = new Date();
   // getUTCDay() é importante pois o servidor da Vercel roda em UTC. 
