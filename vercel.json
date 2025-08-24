@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/api/atualizar",
+      "path": "/api/atualizar01",
       "schedule": "0 5 * * *"
     }
   ]
