@@ -1,5 +1,5 @@
 // api/startApp.ts
-import app from '../../src/App';
+import app from '../src/App';
 
 // A função padrão de API no Vercel usando a Web API
 export default async function handler(req: Request): Promise<Response> {
