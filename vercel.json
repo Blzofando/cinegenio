@@ -1,7 +1,7 @@
 {
   "crons": [
     {
-      "path": "/src/app",
+      "path": "/api/atualizar",
       "schedule": "0 3 * * *"
     }
   ]
