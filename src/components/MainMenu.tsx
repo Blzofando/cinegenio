@@ -5,8 +5,6 @@ interface MainMenuProps {
   setView: (view: View) => void;
 }
 
-// --- Componentes de UI para o Novo Design ---
-
 // Card para a visualização em Desktop
 const FeatureCard = ({ icon, title, onClick }: { icon: string; title: string; onClick: () => void; }) => (
     <button
@@ -41,17 +39,12 @@ const FooterButton = ({ icon, text, onClick }: { icon: string, text: string, onC
 
 const MainMenu: React.FC<MainMenuProps> = ({ setView }) => {
   return (
-    // Container principal com fundo escuro
     <div className="min-h-screen w-full bg-gradient-to-b from-gray-900 to-black text-white relative overflow-hidden">
-        {/* Elemento de fundo decorativo inspirado na imagem de referência */}
+        {/* Elemento de fundo decorativo */}
         <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-            {/* SVG do Rolo de Filme */}
             <svg className="absolute top-1/4 left-1/4 transform -translate-x-1/2 -translate-y-1/2 text-indigo-800/50 w-32 h-32 rotate-45" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 2v20h19V2H2.5zM7 2v20M12 2v20M17 2v20M2 7h20M2 12h20M2 17h20"/></svg>
-            {/* SVG da Claquete */}
             <svg className="absolute bottom-1/4 right-1/4 transform translate-x-1/2 translate-y-1/2 text-fuchsia-800/50 w-32 h-32 -rotate-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M18.8 9.8L12 16l-6.8-6.2L2 12.2V20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-7.8l-3.2-3.2zM2 6l5 6L12 6l5 6 5-6z"/></svg>
-            {/* SVG do Rolo de Filme Rotacionado */}
             <svg className="absolute top-1/2 right-1/3 transform -translate-x-1/2 -translate-y-1/2 text-purple-800/50 w-28 h-28 -rotate-90" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M2.5 2v20h19V2H2.5zM7 2v20M12 2v20M17 2v20M2 7h20M2 12h20M2 17h20"/></svg>
-            {/* SVG da Claquete Rotacionada */}
             <svg className="absolute bottom-1/3 left-1/3 transform translate-x-1/2 translate-y-1/2 text-blue-800/50 w-36 h-36 rotate-18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M18.8 9.8L12 16l-6.8-6.2L2 12.2V20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-7.8l-3.2-3.2zM2 6l5 6L12 6l5 6 5-6z"/></svg>
         </div>
 
@@ -81,14 +74,14 @@ const MainMenu: React.FC<MainMenuProps> = ({ setView }) => {
                         <FeatureCard icon="📡" title="Radar de Lançamentos" onClick={() => setView(View.RADAR)} />
                         <FeatureCard icon="🏆" title="Desafio do Gênio" onClick={() => setView(View.CHALLENGE)} />
                         <FeatureCard icon="⚔️" title="Duelo de Títulos" onClick={() => setView(View.DUEL)} />
-                        {/* --- BOTÃO ADICIONADO AQUI --- */}
                         <FeatureCard icon="🗓️" title="Relevantes da Semana" onClick={() => setView(View.WEEKLY_RELEVANTS)} />
                     </div>
                 </div>
             </div>
 
             {/* ---- VISUALIZAÇÃO PARA MOBILE (TELAS ESTREITAS) ---- */}
-            <div className="lg:hidden flex flex-col flex-grow justify-center text-center">
+            {/* --- ALTERAÇÃO AQUI: Adicionado padding-bottom (pb-24) para dar espaço para o rodapé --- */}
+            <div className="lg:hidden flex flex-col flex-grow justify-center text-center pb-24">
                 <div className="mb-12">
                     <h1 className="text-5xl font-extrabold tracking-tight">
                         CineGênio <span className="text-indigo-400">Pessoal</span>
@@ -99,7 +92,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ setView }) => {
                     <MobileMenuButton icon="💬" text="Fale com o Gênio" onClick={() => setView(View.CHAT)} />
                     <MobileMenuButton icon="💡" text="Sugestão Personalizada" onClick={() => setView(View.SUGGESTION)} />
                     <MobileMenuButton icon="📡" text="Radar de Lançamentos" onClick={() => setView(View.RADAR)} />
-                    {/* --- BOTÃO ADICIONADO AQUI --- */}
                     <MobileMenuButton icon="🗓️" text="Relevantes da Semana" onClick={() => setView(View.WEEKLY_RELEVANTS)} />
                     <MobileMenuButton icon="🏆" text="Desafio do Gênio" onClick={() => setView(View.CHALLENGE)} />
                     <MobileMenuButton icon="🎲" text="Sugestão Aleatória" onClick={() => setView(View.RANDOM)} />
@@ -108,15 +100,15 @@ const MainMenu: React.FC<MainMenuProps> = ({ setView }) => {
             </div>
 
             {/* Rodapé Fixo (Apenas em telas menores) */}
-            <footer className="fixed bottom-0 left-0 w-full bg-gray-800/50 backdrop-blur-md p-4 border-t border-gray-700 z-20 lg:hidden">
-                <div className="flex justify-around items-center">
+            <footer className="fixed bottom-0 left-0 w-full bg-gray-900/80 backdrop-blur-sm p-4 border-t border-gray-700 z-20 lg:hidden">
+                <div className="flex justify-around items-center max-w-md mx-auto">
                     <FooterButton icon="📚" text="Minha Coleção" onClick={() => setView(View.COLLECTION)} />
                     <FooterButton icon="📋" text="Watchlist" onClick={() => setView(View.WATCHLIST)} />
                     <FooterButton icon="📊" text="Meus Insights" onClick={() => setView(View.STATS)} />
                 </div>
             </footer>
 
-            {/* Rodapé para telas maiores (igual antes) */}
+            {/* Rodapé para telas maiores */}
             <footer className="w-full max-w-md mx-auto bg-gray-800/50 backdrop-blur-sm p-4 rounded-2xl border border-gray-700 mt-8 flex-shrink-0 hidden lg:block">
                 <div className="flex justify-around items-center">
                     <FooterButton icon="📚" text="Minha Coleção" onClick={() => setView(View.COLLECTION)} />
